@@ -1,0 +1,25 @@
+---
+dependencies:
+  ai_box: ^0.1.0
+  api_http: ^0.0.1
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+description: '''A claude AI provider based on ai_box.'''
+dev_dependencies:
+  auto_exporter: any
+  build_runner: ^2.4.15
+  freezed: ^3.0.6
+  json_serializable: ^6.9.5
+  test: ^1.26.0
+  very_good_analysis: any
+environment:
+  sdk: ^3.2.0
+name: claude_box
+homepage: https://github.com/normidar/ai_box
+topics:
+  - ai
+  - claude
+  - ai-box
+  - llm
+  - anthropic
+version: 0.1.0

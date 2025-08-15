@@ -38,7 +38,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dart pub get
+          for dir in pkgs/*/; do
+            if [ -d "$dir" ]; then
+              echo "Installing dependencies for $dir"
+              cd "$dir"
+              dart pub get
+              cd - > /dev/null
+            fi
+          done
 
       - name: Run format
         run: |
@@ -46,7 +53,14 @@ jobs:
 
       - name: Run analyze
         run: |
-          dart analyze
+          for dir in pkgs/*/; do
+            if [ -d "$dir" ]; then
+              echo "Analyzing $dir"
+              cd "$dir"
+              dart analyze
+              cd - > /dev/null
+            fi
+          done
 
       - name: Check git diff
         run: |

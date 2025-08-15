@@ -9,12 +9,17 @@ help:
 
 # ci
 .PHONY: ci
-ci: build analyze format
+ci: build_all analyze_all format melos_generate
 
 # analyze
-.PHONY: analyze
-analyze: ## Analyze all apps with Flutter
-	fvm dart analyze .
+.PHONY: analyze_all
+analyze_all: ## Analyze all apps with Flutter
+	@for dir in pkgs/*/; do \
+		if [ -d "$$dir" ]; then \
+			echo "Analyzing $$dir..."; \
+			cd "$$dir" && fvm dart analyze . && cd ../..; \
+		fi \
+	done
 
 # format
 .PHONY: format
@@ -23,9 +28,14 @@ format: ## Format all code
 	npx prettier --write "**/*.md"
 
 # run build
-.PHONY: build
-build: ## Same functionality as `fvm dart run build_runner build` (made available at root level) Usage: `make build`
-	fvm dart run build_runner build --delete-conflicting-outputs
+.PHONY: build_all
+build_all: ## Same functionality as `fvm dart run build_runner build` (made available at root level) Usage: `make build_all`
+	@for dir in pkgs/*/; do \
+		if [ -d "$$dir" ]; then \
+			echo "Building $$dir..."; \
+			cd "$$dir" && fvm dart run build_runner build --delete-conflicting-outputs && cd ../..; \
+		fi \
+	done
 
 # add_freezed: https://pub.dev/packages/freezed#install
 .PHONY: add_freezed
@@ -59,11 +69,21 @@ git_my_tasks: ## Display my tasks: `make git_my_tasks`
 
 .PHONY: pub_publish_dry_run
 pub_publish_dry_run: ## Dry run for pub publish: `make pub_publish_dry_run`
-	fvm dart pub publish --dry-run
+	if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "\033[0;31mPlease provide a package name."; \
+	else \
+		(cd $(filter-out $@,$(MAKECMDGOALS)) && \
+		fvm dart pub publish --dry-run); \
+	fi
 
 .PHONY: pub_publish
 pub_publish: ## Publish to pub.dev: `make pub_publish`
-	fvm dart pub publish
+	if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "\033[0;31mPlease provide a package name."; \
+	else \
+		(cd $(filter-out $@,$(MAKECMDGOALS)) && \
+		fvm dart pub publish); \
+	fi
 
 .PHONY: add_dependency
 add_dependency: ## Add a dependency to the package: `make add_dependency <dependency_name>`
@@ -91,6 +111,11 @@ rename: ## Rename in all files from dart_pkg_group_temp to <new_name>: `make ren
 		echo "\033[0;33mModified files:"; \
 		git status --porcelain | grep -E "^\s*M" || echo "No files were modified."; \
 	fi
+
+.PHONY: melos_generate
+melos_generate: ## Generate melos.yaml: `make melos_generate`
+	fvm dart run melos bootstrap && \
+	fvm dart run melos  list --gviz > gviz.dot \
 
 %:
 	@:

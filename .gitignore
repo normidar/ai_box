@@ -30,3 +30,9 @@ doc/api/
 
 # FVM Version Cache
 .fvm/
+
+# Melos
+melos*.iml
+
+# idea
+.idea/

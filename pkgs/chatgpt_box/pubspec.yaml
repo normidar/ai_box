@@ -1,0 +1,25 @@
+---
+dependencies:
+  ai_box: ^0.1.0
+  api_http: ^0.0.1
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+description: A chatgpt AI provider based on ai_box.
+dev_dependencies:
+  auto_exporter: any
+  build_runner: ^2.5.4
+  freezed: ^3.0.6
+  json_serializable: ^6.9.5
+  test: ^1.26.0
+  very_good_analysis: any
+environment:
+  sdk: ^3.7.0
+homepage: https://github.com/normidar/ai_box
+name: chatgpt_box
+topics:
+  - ai
+  - chatgpt
+  - ai-box
+  - llm
+  - openai
+version: 0.0.2

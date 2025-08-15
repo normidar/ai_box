@@ -1,0 +1,7 @@
+---
+dependencies: null
+dev_dependencies:
+  melos: ^6.0.0
+environment:
+  sdk: ^3.0.0
+name: ai_box
