@@ -2,12 +2,15 @@ digraph packages {
   size="10"; ratio=fill;
   ai_box [shape="box"; color="#3ac239"];
   chatgpt_box [shape="box"; color="#07cf0e"];
+  claude_box [shape="box"; color="#e4f40c"];
   chatgpt_box -> ai_box [style="filled"; color="#3ac239"];
+  claude_box -> ai_box [style="filled"; color="#3ac239"];
   subgraph "cluster pkgs" {
     label="pkgs";
     color="#7c6413";
     ai_box;
     chatgpt_box;
+    claude_box;
   }
 }
 
