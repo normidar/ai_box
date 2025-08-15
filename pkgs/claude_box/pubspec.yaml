@@ -1,6 +1,6 @@
 ---
 dependencies:
-  ai_box: ^0.0.1
+  ai_box: ^0.1.0
   api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
@@ -22,4 +22,4 @@ topics:
   - ai-box
   - llm
   - anthropic
-version: 0.0.1
+version: 0.1.0

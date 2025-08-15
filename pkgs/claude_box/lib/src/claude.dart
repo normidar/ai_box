@@ -6,7 +6,6 @@ import 'package:claude_box/src/freezed/models/list_models_response/list_models_r
 import 'package:claude_box/src/freezed/models/model_info/model_info.dart';
 import 'package:claude_box/src/freezed/models/request_header/request_header.dart';
 
-/// Claude do not support seed parameter yet
 class Claude extends LLMAIBase {
   Claude({required super.apiKey});
 
@@ -18,9 +17,7 @@ class Claude extends LLMAIBase {
     required String model,
     required List<LLMContent> messages,
     int? maxTokens,
-    int? seed,
   }) async {
-    // Note: Claude API does not support seed parameter yet
     final messageResponse = await createMessage(
       messageRequest: MessageRequest(
         model: model,
