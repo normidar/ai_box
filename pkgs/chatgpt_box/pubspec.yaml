@@ -1,6 +1,6 @@
 ---
 dependencies:
-  ai_box: ^0.0.1
+  ai_box: ^0.1.0
   api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
@@ -14,12 +14,12 @@ dev_dependencies:
   very_good_analysis: any
 environment:
   sdk: ^3.7.0
-name: chatgpt_box
 homepage: https://github.com/normidar/ai_box
+name: chatgpt_box
 topics:
   - ai
   - chatgpt
   - ai-box
   - llm
   - openai
-version: 0.0.1
+version: 0.0.2

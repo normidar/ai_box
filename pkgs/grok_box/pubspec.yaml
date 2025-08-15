@@ -1,10 +1,10 @@
 ---
 dependencies:
-  api_http: ^0.0.1
   ai_box: ^0.0.1
+  api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
-description: "'A grok AI provider based on ai_box. '"
+description: '''A grok AI provider based on ai_box. '''
 dev_dependencies:
   auto_exporter: any
   build_runner: ^2.5.4
@@ -14,8 +14,8 @@ dev_dependencies:
   very_good_analysis: any
 environment:
   sdk: ^3.2.0
-name: grok_box
 homepage: https://github.com/normidar/ai_box
+name: grok_box
 topics:
   - ai
   - grok
