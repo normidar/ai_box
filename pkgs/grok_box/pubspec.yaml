@@ -15,6 +15,7 @@ dev_dependencies:
 environment:
   sdk: ^3.2.0
 name: grok_box
+homepage: https://github.com/normidar/ai_box
 topics:
   - ai
   - grok
