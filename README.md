@@ -1,1 +1,1 @@
-pkgs/main_pkg/README.md
+pkgs/ai_box/README.md
