@@ -4,4 +4,4 @@ targets:
       auto_exporter:
         options:
           default_export_all: true
-          project_name: main_pkg
+          project_name: ai_box

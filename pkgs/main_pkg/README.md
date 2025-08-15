@@ -1,10 +1,10 @@
-# main_pkg
+# ai_box
 
-[![GitHub](https://img.shields.io/github/license/normidar/main_pkg.svg)](https://github.com/normidar/main_pkg/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/github/license/normidar/ai_box.svg)](https://github.com/normidar/ai_box/blob/main/LICENSE)
 
-[![pub package](https://img.shields.io/pub/v/main_pkg.svg)](https://pub.dartlang.org/packages/main_pkg)
+[![pub package](https://img.shields.io/pub/v/ai_box.svg)](https://pub.dartlang.org/packages/ai_box)
 
-[![GitHub Stars](https://img.shields.io/github/stars/normidar/main_pkg.svg)](https://github.com/normidar/main_pkg/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/normidar/ai_box.svg)](https://github.com/normidar/ai_box/stargazers)
 
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/normidar.svg?style=social&label=Follow%20%40normidar)](https://twitter.com/normidar)
 

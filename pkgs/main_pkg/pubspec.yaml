@@ -8,8 +8,8 @@ dev_dependencies:
   very_good_analysis: any
 environment:
   sdk: ^3.0.0
-name: main_pkg
-homepage: https://github.com/normidar/main_pkg
+name: ai_box
+homepage: https://github.com/normidar/ai_box
 topics:
   - a
   - b

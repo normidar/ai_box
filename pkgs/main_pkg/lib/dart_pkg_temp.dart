@@ -1,1 +1,1 @@
-export 'package:main_pkg/src/abc.dart';
+export 'package:ai_box/src/abc.dart';
