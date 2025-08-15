@@ -1,0 +1,10 @@
+digraph packages {
+  size="10"; ratio=fill;
+  ai_box [shape="box"; color="#3ac239"];
+  subgraph "cluster pkgs" {
+    label="pkgs";
+    color="#7c6413";
+    ai_box;
+  }
+}
+
