@@ -1,4 +1,4 @@
-import 'package:box_ai_base/box_ai_base.dart';
+import 'package:ai_box/ai_box.dart';
 import 'package:chatgpt_box/src/core/chat_completions_core.dart';
 import 'package:chatgpt_box/src/core/models_core.dart';
 import 'package:chatgpt_box/src/freezed/chat_completion/chat_completion_request/chat_completion_request.dart';

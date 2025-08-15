@@ -33,8 +33,8 @@ By using the `runLLMAIBaseCommonTests()` function, you can ensure that all `LLMA
 import 'package:test/test.dart';
 import 'package:your_ai_package/your_ai_package.dart';
 
-// Import the test utilities from box_ai_base
-import '../box_ai_base/test/test_utils.dart';
+// Import the test utilities from ai_box
+import '../ai_box/test/test_utils.dart';
 
 void main() {
   // Run the common tests
@@ -91,7 +91,7 @@ The common tests include the following:
 
 1. Create a class that inherits from `LLMAIBase`.
 2. Implement the required methods.
-3. Import `../box_ai_base/test/test_utils.dart` in the test file.
+3. Import `../ai_box/test/test_utils.dart` in the test file.
 4. Call `runLLMAIBaseCommonTests()`.
 5. Add specific tests as needed.
 

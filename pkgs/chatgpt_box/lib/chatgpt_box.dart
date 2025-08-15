@@ -1,5 +1,7 @@
 export 'package:chatgpt_box/src/chatgpt.dart';
+export 'package:chatgpt_box/src/core/chat_completions_core.dart';
 export 'package:chatgpt_box/src/core/chatgpt_core.dart';
+export 'package:chatgpt_box/src/core/models_core.dart';
 export 'package:chatgpt_box/src/freezed/chat_completion/chat_completion_object/chat_completion_object.dart';
 export 'package:chatgpt_box/src/freezed/chat_completion/chat_completion_object_choice/chat_completion_object_choice.dart';
 export 'package:chatgpt_box/src/freezed/chat_completion/chat_completion_object_choice_message/chat_completion_object_choice_message.dart';

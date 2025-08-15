@@ -9,7 +9,7 @@ help:
 
 # ci
 .PHONY: ci
-ci: build_all analyze_all format
+ci: build_all analyze_all format melos_generate
 
 # analyze
 .PHONY: analyze_all
