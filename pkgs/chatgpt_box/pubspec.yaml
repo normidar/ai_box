@@ -15,6 +15,7 @@ dev_dependencies:
 environment:
   sdk: ^3.7.0
 name: chatgpt_box
+homepage: https://github.com/normidar/ai_box
 topics:
   - ai
   - chatgpt
