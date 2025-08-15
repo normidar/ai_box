@@ -4,9 +4,11 @@ digraph packages {
   chatgpt_box [shape="box"; color="#07cf0e"];
   claude_box [shape="box"; color="#e4f40c"];
   gemini_box [shape="box"; color="#0e171e"];
+  grok_box [shape="box"; color="#ac07ba"];
   chatgpt_box -> ai_box [style="filled"; color="#3ac239"];
   claude_box -> ai_box [style="filled"; color="#3ac239"];
   gemini_box -> ai_box [style="filled"; color="#3ac239"];
+  grok_box -> ai_box [style="filled"; color="#3ac239"];
   subgraph "cluster pkgs" {
     label="pkgs";
     color="#7c6413";
@@ -14,6 +16,7 @@ digraph packages {
     chatgpt_box;
     claude_box;
     gemini_box;
+    grok_box;
   }
 }
 
