@@ -112,5 +112,9 @@ rename: ## Rename in all files from dart_pkg_group_temp to <new_name>: `make ren
 		git status --porcelain | grep -E "^\s*M" || echo "No files were modified."; \
 	fi
 
+.PHONY: melos_generate
+melos_generate: ## Generate melos.yaml: `make melos_generate`
+	fvm dart run melos bootstrap
+
 %:
 	@:
