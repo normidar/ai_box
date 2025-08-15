@@ -15,5 +15,10 @@ dev_dependencies:
 environment:
   sdk: ^3.7.0
 name: chatgpt_box
-publish_to: none
+topics:
+  - ai
+  - chatgpt
+  - ai-box
+  - llm
+  - openai
 version: 0.0.1
