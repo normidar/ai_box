@@ -46,7 +46,14 @@ jobs:
 
       - name: Run analyze
         run: |
-          dart analyze
+          for dir in pkgs/*/; do
+            if [ -d "$dir" ]; then
+              echo "Analyzing $dir"
+              cd "$dir"
+              dart analyze
+              cd - > /dev/null
+            fi
+          done
 
       - name: Check git diff
         run: |
