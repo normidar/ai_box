@@ -1,6 +1,6 @@
 ---
 dependencies: null
-description: "'A pkg in Coin Galaxy.'"
+description: A base class for all AI providers.
 dev_dependencies:
   auto_exporter: ^4.0.0
   build_runner: ^2.6.0
@@ -11,9 +11,9 @@ environment:
 name: ai_box
 homepage: https://github.com/normidar/ai_box
 topics:
-  - a
-  - b
-  - c
-  - d
-  - e
+  - ai
+  - chatgpt
+  - grok
+  - gemini
+  - claude
 version: 0.0.1

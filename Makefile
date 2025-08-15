@@ -69,7 +69,12 @@ git_my_tasks: ## Display my tasks: `make git_my_tasks`
 
 .PHONY: pub_publish_dry_run
 pub_publish_dry_run: ## Dry run for pub publish: `make pub_publish_dry_run`
-	fvm dart pub publish --dry-run
+	if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "\033[0;31mPlease provide a package name."; \
+	else \
+		(cd $(filter-out $@,$(MAKECMDGOALS)) && \
+		fvm dart pub publish --dry-run); \
+	fi
 
 .PHONY: pub_publish
 pub_publish: ## Publish to pub.dev: `make pub_publish`
