@@ -4,19 +4,16 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   const LLMAIBase({required super.apiKey});
 
   @override
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-    int? seed,
-  });
+  Future<LLMResponse> chat(
+      {required String model,
+      required List<LLMContent> messages,
+      int? maxTokens});
 
   @override
   Future<String> chatWithStrings({
     required String model,
     required List<String> messages,
     int? maxTokens,
-    int? seed,
   }) {
     var nowAuthor = LLMRole.user;
     final nowMessages = <LLMContent>[];
@@ -30,7 +27,6 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
       model: model,
       messages: nowMessages,
       maxTokens: maxTokens,
-      seed: seed,
     ).then((value) => value.content.content);
   }
 
@@ -39,13 +35,11 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
     required String model,
     required String message,
     int? maxTokens,
-    int? seed,
   }) {
     return chatWithStrings(
       model: model,
       messages: [message],
       maxTokens: maxTokens,
-      seed: seed,
     );
   }
 }
@@ -55,21 +49,18 @@ abstract class LLMAIInterface {
     required String model,
     required List<LLMContent> messages,
     int? maxTokens,
-    int? seed,
   });
 
   Future<String> chatWithStrings({
     required String model,
     required List<String> messages,
     int? maxTokens,
-    int? seed,
   });
 
   Future<String> generateText({
     required String model,
     required String message,
     int? maxTokens,
-    int? seed,
   });
 
   Future<List<String>> getModelIds();
