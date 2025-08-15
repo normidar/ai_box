@@ -4,7 +4,7 @@ dependencies:
   api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
-description: '''A pkg in Coin Galaxy.'''
+description: '''A claude AI provider based on ai_box.'''
 dev_dependencies:
   auto_exporter: any
   build_runner: ^2.4.15
@@ -15,5 +15,11 @@ dev_dependencies:
 environment:
   sdk: ^3.2.0
 name: claude_box
-publish_to: none
+homepage: https://github.com/normidar/ai_box
+topics:
+  - ai
+  - claude
+  - ai-box
+  - llm
+  - anthropic
 version: 0.0.1
