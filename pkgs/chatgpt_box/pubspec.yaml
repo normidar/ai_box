@@ -1,8 +1,7 @@
 ---
 dependencies:
   api_http: ^0.0.1
-  box_ai_base:
-    path: ../box_ai_base
+  ai_box: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
 description: "'A pkg in Coin Galaxy.'"
