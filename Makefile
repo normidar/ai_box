@@ -9,12 +9,17 @@ help:
 
 # ci
 .PHONY: ci
-ci: build analyze format
+ci: build_all analyze_all format
 
 # analyze
-.PHONY: analyze
-analyze: ## Analyze all apps with Flutter
-	fvm dart analyze .
+.PHONY: analyze_all
+analyze_all: ## Analyze all apps with Flutter
+	@for dir in pkgs/*/; do \
+		if [ -d "$$dir" ]; then \
+			echo "Analyzing $$dir..."; \
+			cd "$$dir" && fvm dart analyze . && cd ../..; \
+		fi \
+	done
 
 # format
 .PHONY: format
@@ -23,9 +28,14 @@ format: ## Format all code
 	npx prettier --write "**/*.md"
 
 # run build
-.PHONY: build
-build: ## Same functionality as `fvm dart run build_runner build` (made available at root level) Usage: `make build`
-	fvm dart run build_runner build --delete-conflicting-outputs
+.PHONY: build_all
+build_all: ## Same functionality as `fvm dart run build_runner build` (made available at root level) Usage: `make build_all`
+	@for dir in pkgs/*/; do \
+		if [ -d "$$dir" ]; then \
+			echo "Building $$dir..."; \
+			cd "$$dir" && fvm dart run build_runner build --delete-conflicting-outputs && cd ../..; \
+		fi \
+	done
 
 # add_freezed: https://pub.dev/packages/freezed#install
 .PHONY: add_freezed
