@@ -67,6 +67,16 @@ git_create_tag: ## Create a tag: `make git_create_tag <tag_name>`
 git_my_tasks: ## Display my tasks: `make git_my_tasks`
 	gh issue ls --assignee @me
 
+.PHONY: pub_get
+pub_get: ## Run pub get for all packages: `make pub_get`
+	fvm dart pub get
+	@for dir in pkgs/*/; do \
+		if [ -f "$$dir/pubspec.yaml" ]; then \
+			echo "Running pub get in $$dir..."; \
+			(cd "$$dir" && fvm dart pub get); \
+		fi \
+	done
+
 .PHONY: pub_publish_dry_run
 pub_publish_dry_run: ## Dry run for pub publish: `make pub_publish_dry_run`
 	if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
