@@ -9,39 +9,60 @@ class Gemini extends LLMAIBase {
   final GeminiFiles files;
 
   @override
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-    int? seed,
-  }) async {
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
+    // Gemini では system ロールのメッセージを systemInstruction に分離する
+    final systemMessages = request.messages
+        .where((e) => e.role == LLMRole.system)
+        .map((e) => e.content)
+        .join('\n');
+    final userMessages = request.messages
+        .where((e) => e.role != LLMRole.system)
+        .toList();
+
+    String? responseMimeType;
+    if (request.responseFormat?.type == LLMResponseFormatType.jsonObject) {
+      responseMimeType = 'application/json';
+    }
+
     final response = await GeminiCore.generateContent(
       apiKey: apiKey,
-      model: model,
+      model: request.model,
       requestBody: RequestBody(
-        contents: messages
+        contents: userMessages
             .map(
               (e) => Content(
-                role: e.role.name,
-                parts: [
-                  Part(text: e.content),
-                ],
+                role: e.role == LLMRole.model ? 'model' : 'user',
+                parts: [Part(text: e.content)],
               ),
             )
             .toList(),
+        systemInstruction: systemMessages.isNotEmpty
+            ? Content(parts: [Part(text: systemMessages)])
+            : null,
         generationConfig: GenerationConfig(
-          maxOutputTokens: maxTokens,
-          seed: seed,
+          maxOutputTokens: request.maxTokens,
+          temperature: request.temperature,
+          topP: request.topP,
+          stopSequences: request.stop,
+          seed: request.seed,
+          frequencyPenalty: request.frequencyPenalty,
+          presencePenalty: request.presencePenalty,
+          responseMimeType: responseMimeType,
         ),
       ),
     );
-    return LLMResponse(
+
+    final candidate = response.candidates?.first;
+    return LLMCompletionResponse(
       content: LLMContent(
         role: LLMRole.model,
-        content: response.candidates?.first.content?.parts.first.text ?? '',
+        content: candidate?.content?.parts.first.text ?? '',
       ),
       inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
       outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
+      finishReason: candidate?.finishReason?.name,
     );
   }
 

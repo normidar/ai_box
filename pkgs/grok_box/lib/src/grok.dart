@@ -5,37 +5,46 @@ class Grok extends LLMAIBase {
   Grok({required super.apiKey});
 
   @override
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-    int? seed,
-  }) async {
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
     final chatCompletion = await GrokCore.chatCompletion(
       apiKey: apiKey,
       request: ChatCompletionRequest(
-        model: model,
-        messages: messages
+        model: request.model,
+        messages: request.messages
             .map(
               (e) => ChatCompletionMessage(
-                role: e.role == LLMRole.user
-                    ? ChatCompletionRole.user
-                    : ChatCompletionRole.assistant,
+                role: e.role == LLMRole.model
+                    ? ChatCompletionRole.assistant
+                    : e.role == LLMRole.system
+                        ? ChatCompletionRole.system
+                        : ChatCompletionRole.user,
                 content: e.content,
               ),
             )
             .toList(),
-        maxTokens: maxTokens,
-        seed: seed,
+        maxTokens: request.maxTokens,
+        temperature: request.temperature,
+        topP: request.topP,
+        stop: request.stop,
+        seed: request.seed,
+        frequencyPenalty: request.frequencyPenalty,
+        presencePenalty: request.presencePenalty,
+        responseFormat: request.responseFormat != null
+            ? {'type': request.responseFormat!.type.name}
+            : null,
       ),
     );
-    return LLMResponse(
+    final choice = chatCompletion.choices.first;
+    return LLMCompletionResponse(
       content: LLMContent(
         role: LLMRole.model,
-        content: chatCompletion.choices.first.message.content ?? '',
+        content: choice.message.content ?? '',
       ),
       inputTokens: chatCompletion.usage?.promptTokens ?? 0,
       outputTokens: chatCompletion.usage?.completionTokens ?? 0,
+      finishReason: choice.finishReason,
     );
   }
 

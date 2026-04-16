@@ -8,36 +8,42 @@ class ChatGPT extends LLMAIBase {
   ChatGPT({required super.apiKey});
 
   @override
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-    int? seed,
-  }) async {
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
     final chatCompletion = await ChatCompletionsCore.createChatCompletion(
       apiKey: apiKey,
       request: ChatCompletionRequest(
-        model: model,
-        maxCompletionTokens: maxTokens,
-        seed: seed,
-        messages:
-            messages
-                .map(
-                  (e) => ChatCompletionRequestMessage(
-                    role: e.role.name,
-                    content: e.content,
-                  ),
-                )
-                .toList(),
+        model: request.model,
+        messages: request.messages
+            .map(
+              (e) => ChatCompletionRequestMessage(
+                role: e.role == LLMRole.model ? 'assistant' : e.role.name,
+                content: e.content,
+              ),
+            )
+            .toList(),
+        maxCompletionTokens: request.maxTokens,
+        temperature: request.temperature,
+        topP: request.topP,
+        stop: request.stop,
+        seed: request.seed,
+        frequencyPenalty: request.frequencyPenalty,
+        presencePenalty: request.presencePenalty,
+        responseFormat: request.responseFormat != null
+            ? {'type': request.responseFormat!.type.name}
+            : null,
       ),
     );
-    return LLMResponse(
+    final choice = chatCompletion.choices.first;
+    return LLMCompletionResponse(
       content: LLMContent(
         role: LLMRole.model,
-        content: chatCompletion.choices.first.message.content!,
+        content: choice.message.content!,
       ),
       inputTokens: chatCompletion.usage.promptTokens,
       outputTokens: chatCompletion.usage.completionTokens,
+      finishReason: choice.finishReason,
     );
   }
 

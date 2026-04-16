@@ -13,29 +13,44 @@ class Claude extends LLMAIBase {
       RequestHeader(apiKey: apiKey, anthropicVersion: '2023-06-01');
 
   @override
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-  }) async {
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
+    // Claude では system ロールのメッセージを system フィールドに分離する
+    final systemMessages = request.messages
+        .where((e) => e.role == LLMRole.system)
+        .map((e) => e.content)
+        .join('\n');
+    final userMessages = request.messages
+        .where((e) => e.role != LLMRole.system)
+        .toList();
+
     final messageResponse = await createMessage(
       messageRequest: MessageRequest(
-        model: model,
-        messages: messages
+        model: request.model,
+        messages: userMessages
             .map(
-              (e) => MessageContent(role: e.role.name, content: e.content),
+              (e) => MessageContent(
+                role: e.role == LLMRole.model ? 'assistant' : 'user',
+                content: e.content,
+              ),
             )
             .toList(),
-        maxTokens: maxTokens ?? 8000,
+        maxTokens: request.maxTokens ?? 8000,
+        system: systemMessages.isNotEmpty ? systemMessages : null,
+        temperature: request.temperature,
+        topP: request.topP,
+        stopSequences: request.stop,
       ),
     );
-    return LLMResponse(
+    return LLMCompletionResponse(
       content: LLMContent(
         role: LLMRole.model,
         content: messageResponse.content.first.text,
       ),
       inputTokens: messageResponse.usage.inputTokens,
       outputTokens: messageResponse.usage.outputTokens,
+      finishReason: messageResponse.stopReason,
     );
   }
 

@@ -11,7 +11,13 @@ abstract class ChatCompletionRequest with _$ChatCompletionRequest {
     required String model,
     required List<ChatCompletionRequestMessage> messages,
     @JsonKey(name: 'max_completion_tokens') int? maxCompletionTokens,
+    double? temperature,
+    @JsonKey(name: 'top_p') double? topP,
+    List<String>? stop,
     int? seed,
+    @JsonKey(name: 'frequency_penalty') double? frequencyPenalty,
+    @JsonKey(name: 'presence_penalty') double? presencePenalty,
+    @JsonKey(name: 'response_format') Map<String, dynamic>? responseFormat,
   }) = _ChatCompletionRequest;
 
   factory ChatCompletionRequest.fromJson(Map<String, dynamic> json) =>
