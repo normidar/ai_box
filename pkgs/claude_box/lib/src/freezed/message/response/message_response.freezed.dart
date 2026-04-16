@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -158,6 +157,193 @@ class _$MessageResponseCopyWithImpl<$Res>
     return $MessageUsageCopyWith<$Res>(_self.usage, (value) {
       return _then(_self.copyWith(usage: value));
     });
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageResponse].
+extension MessageResponsePatterns on MessageResponse {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageResponse value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageResponse value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageResponse value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+            String id,
+            String type,
+            String role,
+            List<MessageResponseContent> content,
+            String model,
+            @JsonKey(name: 'stop_reason') String stopReason,
+            MessageUsage usage,
+            @JsonKey(name: 'stop_sequence') String? stopSequence)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse() when $default != null:
+        return $default(_that.id, _that.type, _that.role, _that.content,
+            _that.model, _that.stopReason, _that.usage, _that.stopSequence);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+            String id,
+            String type,
+            String role,
+            List<MessageResponseContent> content,
+            String model,
+            @JsonKey(name: 'stop_reason') String stopReason,
+            MessageUsage usage,
+            @JsonKey(name: 'stop_sequence') String? stopSequence)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse():
+        return $default(_that.id, _that.type, _that.role, _that.content,
+            _that.model, _that.stopReason, _that.usage, _that.stopSequence);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+            String id,
+            String type,
+            String role,
+            List<MessageResponseContent> content,
+            String model,
+            @JsonKey(name: 'stop_reason') String stopReason,
+            MessageUsage usage,
+            @JsonKey(name: 'stop_sequence') String? stopSequence)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponse() when $default != null:
+        return $default(_that.id, _that.type, _that.role, _that.content,
+            _that.model, _that.stopReason, _that.usage, _that.stopSequence);
+      case _:
+        return null;
+    }
   }
 }
 
@@ -347,10 +533,12 @@ class __$MessageResponseCopyWithImpl<$Res>
 
 /// @nodoc
 mixin _$MessageResponseContent {
-  @JsonKey(name: 'type')
-  String get type;
-  @JsonKey(name: 'text')
-  String get text;
+  String get type; // type: text
+  String? get text; // type: tool_use
+  String? get id;
+  String? get name;
+  Map<String, dynamic>? get input; // type: thinking
+  String? get thinking;
 
   /// Create a copy of MessageResponseContent
   /// with the given fields replaced by the non-null parameter values.
@@ -369,16 +557,22 @@ mixin _$MessageResponseContent {
         (other.runtimeType == runtimeType &&
             other is MessageResponseContent &&
             (identical(other.type, type) || other.type == type) &&
-            (identical(other.text, text) || other.text == text));
+            (identical(other.text, text) || other.text == text) &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.name, name) || other.name == name) &&
+            const DeepCollectionEquality().equals(other.input, input) &&
+            (identical(other.thinking, thinking) ||
+                other.thinking == thinking));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, type, text);
+  int get hashCode => Object.hash(runtimeType, type, text, id, name,
+      const DeepCollectionEquality().hash(input), thinking);
 
   @override
   String toString() {
-    return 'MessageResponseContent(type: $type, text: $text)';
+    return 'MessageResponseContent(type: $type, text: $text, id: $id, name: $name, input: $input, thinking: $thinking)';
   }
 }
 
@@ -389,7 +583,12 @@ abstract mixin class $MessageResponseContentCopyWith<$Res> {
       _$MessageResponseContentCopyWithImpl;
   @useResult
   $Res call(
-      {@JsonKey(name: 'type') String type, @JsonKey(name: 'text') String text});
+      {String type,
+      String? text,
+      String? id,
+      String? name,
+      Map<String, dynamic>? input,
+      String? thinking});
 }
 
 /// @nodoc
@@ -406,18 +605,204 @@ class _$MessageResponseContentCopyWithImpl<$Res>
   @override
   $Res call({
     Object? type = null,
-    Object? text = null,
+    Object? text = freezed,
+    Object? id = freezed,
+    Object? name = freezed,
+    Object? input = freezed,
+    Object? thinking = freezed,
   }) {
     return _then(_self.copyWith(
       type: null == type
           ? _self.type
           : type // ignore: cast_nullable_to_non_nullable
               as String,
-      text: null == text
+      text: freezed == text
           ? _self.text
           : text // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
+      id: freezed == id
+          ? _self.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String?,
+      name: freezed == name
+          ? _self.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      input: freezed == input
+          ? _self.input
+          : input // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      thinking: freezed == thinking
+          ? _self.thinking
+          : thinking // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageResponseContent].
+extension MessageResponseContentPatterns on MessageResponseContent {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageResponseContent value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageResponseContent value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageResponseContent value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(String type, String? text, String? id, String? name,
+            Map<String, dynamic>? input, String? thinking)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent() when $default != null:
+        return $default(_that.type, _that.text, _that.id, _that.name,
+            _that.input, _that.thinking);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(String type, String? text, String? id, String? name,
+            Map<String, dynamic>? input, String? thinking)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent():
+        return $default(_that.type, _that.text, _that.id, _that.name,
+            _that.input, _that.thinking);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(String type, String? text, String? id, String? name,
+            Map<String, dynamic>? input, String? thinking)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseContent() when $default != null:
+        return $default(_that.type, _that.text, _that.id, _that.name,
+            _that.input, _that.thinking);
+      case _:
+        return null;
+    }
   }
 }
 
@@ -425,18 +810,40 @@ class _$MessageResponseContentCopyWithImpl<$Res>
 @JsonSerializable()
 class _MessageResponseContent extends MessageResponseContent {
   _MessageResponseContent(
-      {@JsonKey(name: 'type') required this.type,
-      @JsonKey(name: 'text') required this.text})
-      : super._();
+      {required this.type,
+      this.text,
+      this.id,
+      this.name,
+      final Map<String, dynamic>? input,
+      this.thinking})
+      : _input = input,
+        super._();
   factory _MessageResponseContent.fromJson(Map<String, dynamic> json) =>
       _$MessageResponseContentFromJson(json);
 
   @override
-  @JsonKey(name: 'type')
   final String type;
+// type: text
   @override
-  @JsonKey(name: 'text')
-  final String text;
+  final String? text;
+// type: tool_use
+  @override
+  final String? id;
+  @override
+  final String? name;
+  final Map<String, dynamic>? _input;
+  @override
+  Map<String, dynamic>? get input {
+    final value = _input;
+    if (value == null) return null;
+    if (_input is EqualUnmodifiableMapView) return _input;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
+// type: thinking
+  @override
+  final String? thinking;
 
   /// Create a copy of MessageResponseContent
   /// with the given fields replaced by the non-null parameter values.
@@ -460,16 +867,22 @@ class _MessageResponseContent extends MessageResponseContent {
         (other.runtimeType == runtimeType &&
             other is _MessageResponseContent &&
             (identical(other.type, type) || other.type == type) &&
-            (identical(other.text, text) || other.text == text));
+            (identical(other.text, text) || other.text == text) &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.name, name) || other.name == name) &&
+            const DeepCollectionEquality().equals(other._input, _input) &&
+            (identical(other.thinking, thinking) ||
+                other.thinking == thinking));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, type, text);
+  int get hashCode => Object.hash(runtimeType, type, text, id, name,
+      const DeepCollectionEquality().hash(_input), thinking);
 
   @override
   String toString() {
-    return 'MessageResponseContent(type: $type, text: $text)';
+    return 'MessageResponseContent(type: $type, text: $text, id: $id, name: $name, input: $input, thinking: $thinking)';
   }
 }
 
@@ -482,7 +895,12 @@ abstract mixin class _$MessageResponseContentCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {@JsonKey(name: 'type') String type, @JsonKey(name: 'text') String text});
+      {String type,
+      String? text,
+      String? id,
+      String? name,
+      Map<String, dynamic>? input,
+      String? thinking});
 }
 
 /// @nodoc
@@ -499,17 +917,37 @@ class __$MessageResponseContentCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? type = null,
-    Object? text = null,
+    Object? text = freezed,
+    Object? id = freezed,
+    Object? name = freezed,
+    Object? input = freezed,
+    Object? thinking = freezed,
   }) {
     return _then(_MessageResponseContent(
       type: null == type
           ? _self.type
           : type // ignore: cast_nullable_to_non_nullable
               as String,
-      text: null == text
+      text: freezed == text
           ? _self.text
           : text // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
+      id: freezed == id
+          ? _self.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String?,
+      name: freezed == name
+          ? _self.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      input: freezed == input
+          ? _self._input
+          : input // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      thinking: freezed == thinking
+          ? _self.thinking
+          : thinking // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -589,6 +1027,169 @@ class _$MessageUsageCopyWithImpl<$Res> implements $MessageUsageCopyWith<$Res> {
           : outputTokens // ignore: cast_nullable_to_non_nullable
               as int,
     ));
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageUsage].
+extension MessageUsagePatterns on MessageUsage {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageUsage value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageUsage value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageUsage value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(@JsonKey(name: 'input_tokens') int inputTokens,
+            @JsonKey(name: 'output_tokens') int outputTokens)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage() when $default != null:
+        return $default(_that.inputTokens, _that.outputTokens);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(@JsonKey(name: 'input_tokens') int inputTokens,
+            @JsonKey(name: 'output_tokens') int outputTokens)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage():
+        return $default(_that.inputTokens, _that.outputTokens);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(@JsonKey(name: 'input_tokens') int inputTokens,
+            @JsonKey(name: 'output_tokens') int outputTokens)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageUsage() when $default != null:
+        return $default(_that.inputTokens, _that.outputTokens);
+      case _:
+        return null;
+    }
   }
 }
 

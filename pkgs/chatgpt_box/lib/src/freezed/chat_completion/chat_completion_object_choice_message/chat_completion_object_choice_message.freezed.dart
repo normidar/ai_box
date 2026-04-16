@@ -15,8 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatCompletionObjectChoiceMessage {
 
- String get role;/// テキストのみの場合は String、マルチモーダルの場合は List<dynamic>。
- dynamic get content; String? get refusal;
+ String get role;/// テキストのみの場合は String、マルチモーダルの場合は `List<dynamic>`。
+ dynamic get content; String? get refusal;/// ツール呼び出しリスト。finish_reason が tool_calls のとき設定される。
+@JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? get toolCalls;/// 音声レスポンス（gpt-4o-audio 系モデルのみ）。
+ Map<String, dynamic>? get audio;
 /// Create a copy of ChatCompletionObjectChoiceMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +31,16 @@ $ChatCompletionObjectChoiceMessageCopyWith<ChatCompletionObjectChoiceMessage> ge
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal)&&const DeepCollectionEquality().equals(other.toolCalls, toolCalls)&&const DeepCollectionEquality().equals(other.audio, audio));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal);
+int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal,const DeepCollectionEquality().hash(toolCalls),const DeepCollectionEquality().hash(audio));
 
 @override
 String toString() {
-  return 'ChatCompletionObjectChoiceMessage(role: $role, content: $content, refusal: $refusal)';
+  return 'ChatCompletionObjectChoiceMessage(role: $role, content: $content, refusal: $refusal, toolCalls: $toolCalls, audio: $audio)';
 }
 
 
@@ -49,7 +51,7 @@ abstract mixin class $ChatCompletionObjectChoiceMessageCopyWith<$Res>  {
   factory $ChatCompletionObjectChoiceMessageCopyWith(ChatCompletionObjectChoiceMessage value, $Res Function(ChatCompletionObjectChoiceMessage) _then) = _$ChatCompletionObjectChoiceMessageCopyWithImpl;
 @useResult
 $Res call({
- String role, dynamic content, String? refusal
+ String role, dynamic content, String? refusal,@JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? toolCalls, Map<String, dynamic>? audio
 });
 
 
@@ -66,12 +68,14 @@ class _$ChatCompletionObjectChoiceMessageCopyWithImpl<$Res>
 
 /// Create a copy of ChatCompletionObjectChoiceMessage
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? role = null,Object? content = freezed,Object? refusal = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? role = null,Object? content = freezed,Object? refusal = freezed,Object? toolCalls = freezed,Object? audio = freezed,}) {
   return _then(_self.copyWith(
 role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as dynamic,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,toolCalls: freezed == toolCalls ? _self.toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
+as List<Map<String, dynamic>>?,audio: freezed == audio ? _self.audio : audio // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 
@@ -156,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal, @JsonKey(name: 'tool_calls')  List<Map<String, dynamic>>? toolCalls,  Map<String, dynamic>? audio)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage() when $default != null:
-return $default(_that.role,_that.content,_that.refusal);case _:
+return $default(_that.role,_that.content,_that.refusal,_that.toolCalls,_that.audio);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return $default(_that.role,_that.content,_that.refusal);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal, @JsonKey(name: 'tool_calls')  List<Map<String, dynamic>>? toolCalls,  Map<String, dynamic>? audio)  $default,) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage():
-return $default(_that.role,_that.content,_that.refusal);case _:
+return $default(_that.role,_that.content,_that.refusal,_that.toolCalls,_that.audio);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +201,10 @@ return $default(_that.role,_that.content,_that.refusal);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String role,  dynamic content,  String? refusal)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String role,  dynamic content,  String? refusal, @JsonKey(name: 'tool_calls')  List<Map<String, dynamic>>? toolCalls,  Map<String, dynamic>? audio)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage() when $default != null:
-return $default(_that.role,_that.content,_that.refusal);case _:
+return $default(_that.role,_that.content,_that.refusal,_that.toolCalls,_that.audio);case _:
   return null;
 
 }
@@ -212,13 +216,35 @@ return $default(_that.role,_that.content,_that.refusal);case _:
 @JsonSerializable()
 
 class _ChatCompletionObjectChoiceMessage extends ChatCompletionObjectChoiceMessage {
-   _ChatCompletionObjectChoiceMessage({required this.role, this.content, this.refusal}): super._();
+   _ChatCompletionObjectChoiceMessage({required this.role, this.content, this.refusal, @JsonKey(name: 'tool_calls') final  List<Map<String, dynamic>>? toolCalls, final  Map<String, dynamic>? audio}): _toolCalls = toolCalls,_audio = audio,super._();
   factory _ChatCompletionObjectChoiceMessage.fromJson(Map<String, dynamic> json) => _$ChatCompletionObjectChoiceMessageFromJson(json);
 
 @override final  String role;
-/// テキストのみの場合は String、マルチモーダルの場合は List<dynamic>。
+/// テキストのみの場合は String、マルチモーダルの場合は `List<dynamic>`。
 @override final  dynamic content;
 @override final  String? refusal;
+/// ツール呼び出しリスト。finish_reason が tool_calls のとき設定される。
+ final  List<Map<String, dynamic>>? _toolCalls;
+/// ツール呼び出しリスト。finish_reason が tool_calls のとき設定される。
+@override@JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? get toolCalls {
+  final value = _toolCalls;
+  if (value == null) return null;
+  if (_toolCalls is EqualUnmodifiableListView) return _toolCalls;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+/// 音声レスポンス（gpt-4o-audio 系モデルのみ）。
+ final  Map<String, dynamic>? _audio;
+/// 音声レスポンス（gpt-4o-audio 系モデルのみ）。
+@override Map<String, dynamic>? get audio {
+  final value = _audio;
+  if (value == null) return null;
+  if (_audio is EqualUnmodifiableMapView) return _audio;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
 
 /// Create a copy of ChatCompletionObjectChoiceMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +259,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal)&&const DeepCollectionEquality().equals(other._toolCalls, _toolCalls)&&const DeepCollectionEquality().equals(other._audio, _audio));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal);
+int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal,const DeepCollectionEquality().hash(_toolCalls),const DeepCollectionEquality().hash(_audio));
 
 @override
 String toString() {
-  return 'ChatCompletionObjectChoiceMessage(role: $role, content: $content, refusal: $refusal)';
+  return 'ChatCompletionObjectChoiceMessage(role: $role, content: $content, refusal: $refusal, toolCalls: $toolCalls, audio: $audio)';
 }
 
 
@@ -253,7 +279,7 @@ abstract mixin class _$ChatCompletionObjectChoiceMessageCopyWith<$Res> implement
   factory _$ChatCompletionObjectChoiceMessageCopyWith(_ChatCompletionObjectChoiceMessage value, $Res Function(_ChatCompletionObjectChoiceMessage) _then) = __$ChatCompletionObjectChoiceMessageCopyWithImpl;
 @override @useResult
 $Res call({
- String role, dynamic content, String? refusal
+ String role, dynamic content, String? refusal,@JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? toolCalls, Map<String, dynamic>? audio
 });
 
 
@@ -270,12 +296,14 @@ class __$ChatCompletionObjectChoiceMessageCopyWithImpl<$Res>
 
 /// Create a copy of ChatCompletionObjectChoiceMessage
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? role = null,Object? content = freezed,Object? refusal = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? role = null,Object? content = freezed,Object? refusal = freezed,Object? toolCalls = freezed,Object? audio = freezed,}) {
   return _then(_ChatCompletionObjectChoiceMessage(
 role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as dynamic,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,toolCalls: freezed == toolCalls ? _self._toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
+as List<Map<String, dynamic>>?,audio: freezed == audio ? _self._audio : audio // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,
   ));
 }
 

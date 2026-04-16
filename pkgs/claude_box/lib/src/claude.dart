@@ -47,13 +47,46 @@ class Claude extends LLMAIBase {
       ),
     );
     return LLMCompletionResponse(
-      content: LLMContent(
-        role: LLMRole.model,
-        content: messageResponse.content.first.text,
-      ),
+      content: _parseContent(messageResponse.content),
       inputTokens: messageResponse.usage.inputTokens,
       outputTokens: messageResponse.usage.outputTokens,
       finishReason: messageResponse.stopReason,
+    );
+  }
+
+  LLMContent _parseContent(List<MessageResponseContent> blocks) {
+    final parts = <LLMContentPart>[];
+    final textBuffer = StringBuffer();
+
+    for (final block in blocks) {
+      switch (block.type) {
+        case 'text':
+          final text = block.text ?? '';
+          textBuffer.write(text);
+          parts.add(LLMTextPart(text));
+        case 'tool_use':
+          parts.add(
+            LLMToolCallPart(
+              id: block.id ?? '',
+              name: block.name ?? '',
+              arguments: block.input ?? {},
+            ),
+          );
+        case 'thinking':
+          // Thinking トークンはテキストとして扱う
+          final text = block.thinking ?? '';
+          textBuffer.write(text);
+          parts.add(LLMTextPart(text));
+      }
+    }
+
+    if (parts.every((p) => p is LLMTextPart)) {
+      return LLMContent(role: LLMRole.model, content: textBuffer.toString());
+    }
+    return LLMContent(
+      role: LLMRole.model,
+      content: textBuffer.toString(),
+      parts: parts,
     );
   }
 
@@ -75,7 +108,10 @@ class Claude extends LLMAIBase {
           maxTokens: maxTokens ?? defaultMaxTokens,
         ),
       );
-      return messageResponse.content.first.text;
+      return messageResponse.content
+          .where((b) => b.type == 'text')
+          .map((b) => b.text ?? '')
+          .join();
     } on Exception catch (_) {
       return null;
     }

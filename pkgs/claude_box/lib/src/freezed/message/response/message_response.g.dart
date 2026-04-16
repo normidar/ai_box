@@ -37,7 +37,11 @@ _MessageResponseContent _$MessageResponseContentFromJson(
         Map<String, dynamic> json) =>
     _MessageResponseContent(
       type: json['type'] as String,
-      text: json['text'] as String,
+      text: json['text'] as String?,
+      id: json['id'] as String?,
+      name: json['name'] as String?,
+      input: json['input'] as Map<String, dynamic>?,
+      thinking: json['thinking'] as String?,
     );
 
 Map<String, dynamic> _$MessageResponseContentToJson(
@@ -45,6 +49,10 @@ Map<String, dynamic> _$MessageResponseContentToJson(
     <String, dynamic>{
       'type': instance.type,
       'text': instance.text,
+      'id': instance.id,
+      'name': instance.name,
+      'input': instance.input,
+      'thinking': instance.thinking,
     };
 
 _MessageUsage _$MessageUsageFromJson(Map<String, dynamic> json) =>

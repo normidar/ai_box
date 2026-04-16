@@ -165,9 +165,16 @@ class LLMContent {
   final List<LLMContentPart>? parts;
 
   bool get hasImages => parts?.any((p) => p is LLMImagePart) ?? false;
-
   List<LLMImagePart> get images =>
       parts?.whereType<LLMImagePart>().toList() ?? [];
+
+  bool get hasToolCalls => parts?.any((p) => p is LLMToolCallPart) ?? false;
+  List<LLMToolCallPart> get toolCalls =>
+      parts?.whereType<LLMToolCallPart>().toList() ?? [];
+
+  bool get hasAudio => parts?.any((p) => p is LLMAudioPart) ?? false;
+  List<LLMAudioPart> get audioList =>
+      parts?.whereType<LLMAudioPart>().toList() ?? [];
 }
 
 /// チャットメッセージの1パーツを表す sealed クラス。
@@ -185,6 +192,51 @@ class LLMImagePart extends LLMContentPart {
   LLMImagePart(this.url);
 
   final String url;
+}
+
+/// ツール呼び出しパーツ。モデルが関数を呼び出す際に返される。
+class LLMToolCallPart extends LLMContentPart {
+  LLMToolCallPart({
+    required this.id,
+    required this.name,
+    required this.arguments,
+  });
+
+  final String id;
+  final String name;
+
+  /// 関数に渡す引数。OpenAI 系は JSON 文字列をパース済み。
+  final Map<String, dynamic> arguments;
+}
+
+/// 音声パーツ。[data] は base64 エンコード済み音声データ。
+class LLMAudioPart extends LLMContentPart {
+  LLMAudioPart({required this.data, this.transcript, this.mimeType});
+
+  final String data;
+
+  /// 音声のテキスト書き起こし（利用可能な場合のみ）。
+  final String? transcript;
+
+  /// audio/mp3、audio/wav など（Gemini の inlineData 由来の場合のみ）。
+  final String? mimeType;
+}
+
+/// コード実行パーツ（Gemini のみ）。モデルが実行を要求したコード。
+class LLMCodeExecutionPart extends LLMContentPart {
+  LLMCodeExecutionPart({required this.code, required this.language});
+
+  final String code;
+  final String language;
+}
+
+/// コード実行結果パーツ（Gemini のみ）。
+class LLMCodeExecutionResultPart extends LLMContentPart {
+  LLMCodeExecutionResultPart({required this.outcome, this.output});
+
+  /// 実行結果: ok / failed / deadline_exceeded
+  final String outcome;
+  final String? output;
 }
 
 enum LLMRole { model, user, system }

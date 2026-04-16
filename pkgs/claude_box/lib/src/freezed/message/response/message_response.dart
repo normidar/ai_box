@@ -24,8 +24,15 @@ abstract class MessageResponse with _$MessageResponse {
 @freezed
 abstract class MessageResponseContent with _$MessageResponseContent {
   factory MessageResponseContent({
-    @JsonKey(name: 'type') required String type,
-    @JsonKey(name: 'text') required String text,
+    required String type,
+    // type: text
+    String? text,
+    // type: tool_use
+    String? id,
+    String? name,
+    Map<String, dynamic>? input,
+    // type: thinking
+    String? thinking,
   }) = _MessageResponseContent;
 
   factory MessageResponseContent.fromJson(Map<String, dynamic> json) =>

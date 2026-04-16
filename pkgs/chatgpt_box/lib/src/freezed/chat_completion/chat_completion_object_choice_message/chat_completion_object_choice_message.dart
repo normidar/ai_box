@@ -11,6 +11,10 @@ abstract class ChatCompletionObjectChoiceMessage
     /// テキストのみの場合は String、マルチモーダルの場合は `List<dynamic>`。
     dynamic content,
     String? refusal,
+    /// ツール呼び出しリスト。finish_reason が tool_calls のとき設定される。
+    @JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? toolCalls,
+    /// 音声レスポンス（gpt-4o-audio 系モデルのみ）。
+    Map<String, dynamic>? audio,
   }) = _ChatCompletionObjectChoiceMessage;
 
   factory ChatCompletionObjectChoiceMessage.fromJson(

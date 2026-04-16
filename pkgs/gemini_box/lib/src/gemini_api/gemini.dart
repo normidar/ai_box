@@ -56,13 +56,72 @@ class Gemini extends LLMAIBase {
 
     final candidate = response.candidates?.first;
     return LLMCompletionResponse(
-      content: LLMContent(
-        role: LLMRole.model,
-        content: candidate?.content?.parts.first.text ?? '',
-      ),
+      content: _parseParts(candidate?.content?.parts ?? []),
       inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
       outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
       finishReason: candidate?.finishReason?.name,
+    );
+  }
+
+  LLMContent _parseParts(List<Part> parts) {
+    // thought=true のパーツ（Thinking トークン）は除外する
+    final contentParts = parts.where((p) => p.thought != true).toList();
+
+    if (contentParts.isEmpty) {
+      return const LLMContent(role: LLMRole.model, content: '');
+    }
+
+    // テキストのみかどうかを確認
+    final hasImages = contentParts.any(
+      (p) => p.inlineData != null || p.fileData != null,
+    );
+    if (!hasImages) {
+      final text = contentParts.map((p) => p.text ?? '').join();
+      return LLMContent(role: LLMRole.model, content: text);
+    }
+
+    // マルチモーダル: テキスト・画像・tool_calls・コード実行などが混在
+    final llmParts = <LLMContentPart>[];
+    final textBuffer = StringBuffer();
+    for (final part in contentParts) {
+      if (part.text case final text?) {
+        textBuffer.write(text);
+        llmParts.add(LLMTextPart(text));
+      } else if (part.inlineData case final blob?) {
+        if (blob.mimeType.startsWith('audio/')) {
+          llmParts.add(LLMAudioPart(data: blob.data, mimeType: blob.mimeType));
+        } else {
+          // 画像（image/png など）は data URI に変換
+          final dataUri = 'data:${blob.mimeType};base64,${blob.data}';
+          llmParts.add(LLMImagePart(dataUri));
+        }
+      } else if (part.fileData case final file?) {
+        llmParts.add(LLMImagePart(file.fileUri));
+      } else if (part.functionCall case final fc?) {
+        llmParts.add(
+          LLMToolCallPart(
+            id: fc.id ?? fc.name,
+            name: fc.name,
+            arguments: fc.args ?? {},
+          ),
+        );
+      } else if (part.executableCode case final ec?) {
+        llmParts.add(
+          LLMCodeExecutionPart(code: ec.code, language: ec.language.name),
+        );
+      } else if (part.codeExecutionResult case final cer?) {
+        llmParts.add(
+          LLMCodeExecutionResultPart(
+            outcome: cer.outcome.name,
+            output: cer.output,
+          ),
+        );
+      }
+    }
+    return LLMContent(
+      role: LLMRole.model,
+      content: textBuffer.toString(),
+      parts: llmParts,
     );
   }
 

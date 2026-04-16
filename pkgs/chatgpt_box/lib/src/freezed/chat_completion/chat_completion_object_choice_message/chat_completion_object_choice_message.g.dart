@@ -12,6 +12,11 @@ _ChatCompletionObjectChoiceMessage _$ChatCompletionObjectChoiceMessageFromJson(
   role: json['role'] as String,
   content: json['content'],
   refusal: json['refusal'] as String?,
+  toolCalls:
+      (json['tool_calls'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList(),
+  audio: json['audio'] as Map<String, dynamic>?,
 );
 
 Map<String, dynamic> _$ChatCompletionObjectChoiceMessageToJson(
@@ -20,4 +25,6 @@ Map<String, dynamic> _$ChatCompletionObjectChoiceMessageToJson(
   'role': instance.role,
   'content': instance.content,
   'refusal': instance.refusal,
+  'tool_calls': instance.toolCalls,
+  'audio': instance.audio,
 };
