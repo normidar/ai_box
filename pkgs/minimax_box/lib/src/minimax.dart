@@ -1,0 +1,70 @@
+import 'package:ai_box/ai_box.dart';
+import 'package:minimax_box/minimax_box.dart';
+
+class MiniMax extends LLMAIBase {
+  MiniMax({required super.apiKey});
+
+  @override
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
+    final chatCompletion = await MiniMaxCore.chatCompletion(
+      apiKey: apiKey,
+      request: ChatCompletionRequest(
+        model: request.model,
+        messages: request.messages
+            .map(
+              (e) => ChatCompletionMessage(
+                role: e.role == LLMRole.model
+                    ? ChatCompletionRole.assistant
+                    : e.role == LLMRole.system
+                        ? ChatCompletionRole.system
+                        : ChatCompletionRole.user,
+                content: e.content,
+              ),
+            )
+            .toList(),
+        maxTokens: request.maxTokens,
+        temperature: request.temperature,
+        topP: request.topP,
+        stop: request.stop,
+        seed: request.seed,
+        responseFormat: request.responseFormat != null
+            ? {'type': request.responseFormat!.type.toApiString()}
+            : null,
+      ),
+    );
+    final choice = chatCompletion.choices.first;
+    return LLMCompletionResponse(
+      content: LLMContent(
+        role: LLMRole.model,
+        content: choice.message.content ?? '',
+      ),
+      inputTokens: chatCompletion.usage?.promptTokens ?? 0,
+      outputTokens: chatCompletion.usage?.completionTokens ?? 0,
+      finishReason: choice.finishReason,
+    );
+  }
+
+  @override
+  Future<List<AIModel>> getModels() async {
+    final modelList = await MiniMaxCore.listModels(apiKey: apiKey);
+    return modelList.data
+        .map(
+          (e) => AIModel(
+            id: e.id,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<bool> validateKey() async {
+    try {
+      await MiniMaxCore.listModels(apiKey: apiKey);
+      return true;
+    } on Exception catch (_) {
+      return false;
+    }
+  }
+}
