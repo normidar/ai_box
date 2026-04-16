@@ -4,10 +4,11 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   const LLMAIBase({required super.apiKey});
 
   @override
-  Future<LLMResponse> chat(
-      {required String model,
-      required List<LLMContent> messages,
-      int? maxTokens});
+  Future<LLMResponse> chat({
+    required String model,
+    required List<LLMContent> messages,
+    int? maxTokens,
+  });
 
   @override
   Future<String> chatWithStrings({
@@ -62,6 +63,8 @@ abstract class LLMAIInterface {
     required String message,
     int? maxTokens,
   });
+
+  Future<List<AIModel>> getModels();
 
   Future<List<String>> getModelIds();
 

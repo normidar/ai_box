@@ -42,9 +42,16 @@ class ChatGPT extends LLMAIBase {
   }
 
   @override
-  Future<List<String>> getModelIds() async {
+  Future<List<AIModel>> getModels() async {
     final models = await ModelsCore.listModels(apiKey: apiKey);
-    return models.data.map((e) => e.id).toList();
+    return models.data
+        .map(
+          (e) => AIModel(
+            id: e.id,
+            created: e.created,
+          ),
+        )
+        .toList();
   }
 
   @override

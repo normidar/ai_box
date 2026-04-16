@@ -69,8 +69,19 @@ class Claude extends LLMAIBase {
   }
 
   @override
-  Future<List<String>> getModelIds() {
-    return listModels().then((value) => value.data.map((e) => e.id).toList());
+  Future<List<AIModel>> getModels() async {
+    final response = await listModels();
+    return response.data
+        .map(
+          (e) => AIModel(
+            id: e.id,
+            name: e.displayName,
+            created: DateTime.tryParse(e.createdAt) != null
+                ? DateTime.parse(e.createdAt).millisecondsSinceEpoch ~/ 1000
+                : null,
+          ),
+        )
+        .toList();
   }
 
   Future<ListModelsResponse> listModels() async {

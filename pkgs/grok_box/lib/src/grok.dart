@@ -40,9 +40,16 @@ class Grok extends LLMAIBase {
   }
 
   @override
-  Future<List<String>> getModelIds() async {
+  Future<List<AIModel>> getModels() async {
     final modelList = await GrokCore.listModels(apiKey: apiKey);
-    return modelList.data.map((e) => e.id).toList();
+    return modelList.data
+        .map(
+          (e) => AIModel(
+            id: e.id,
+            created: e.created,
+          ),
+        )
+        .toList();
   }
 
   @override

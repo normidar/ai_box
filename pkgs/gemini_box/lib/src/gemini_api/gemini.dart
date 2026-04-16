@@ -59,15 +59,19 @@ class Gemini extends LLMAIBase {
       );
 
   @override
-  Future<List<String>> getModelIds() {
-    return GeminiCore.getModels(apiKey: apiKey)
-        .then((value) => value.map((e) => e.name.split('/').last).toList());
+  Future<List<AIModel>> getModels() async {
+    final models = await GeminiCore.getModels(apiKey: apiKey);
+    return models
+        .map(
+          (e) => AIModel(
+            id: e.name.split('/').last,
+            name: e.displayName,
+            description: e.description,
+            contextLength: e.inputTokenLimit,
+          ),
+        )
+        .toList();
   }
-
-  /// Get all models
-  ///
-  /// Ref: https://ai.google.dev/api/models#method:-models.list
-  Future<List<ModelInfo>> getModels() => GeminiCore.getModels(apiKey: apiKey);
 
   @override
   Future<bool> validateKey() {
