@@ -10,7 +10,7 @@ _ChatCompletionObjectChoiceMessage _$ChatCompletionObjectChoiceMessageFromJson(
   Map<String, dynamic> json,
 ) => _ChatCompletionObjectChoiceMessage(
   role: json['role'] as String,
-  content: json['content'] as String?,
+  content: json['content'],
   refusal: json['refusal'] as String?,
 );
 

@@ -37,13 +37,44 @@ class ChatGPT extends LLMAIBase {
     );
     final choice = chatCompletion.choices.first;
     return LLMCompletionResponse(
-      content: LLMContent(
-        role: LLMRole.model,
-        content: choice.message.content!,
-      ),
+      content: _parseContent(choice.message.content),
       inputTokens: chatCompletion.usage.promptTokens,
       outputTokens: chatCompletion.usage.completionTokens,
       finishReason: choice.finishReason,
+    );
+  }
+
+  LLMContent _parseContent(dynamic raw) {
+    // content が null（tool_calls のみのケース）
+    if (raw == null) {
+      return const LLMContent(role: LLMRole.model, content: '');
+    }
+    // 通常のテキストレスポンス
+    if (raw is String) {
+      return LLMContent(role: LLMRole.model, content: raw);
+    }
+    // マルチモーダルレスポンス: List of content parts
+    final contentList = raw as List<dynamic>;
+    final parts = <LLMContentPart>[];
+    final textBuffer = StringBuffer();
+    for (final part in contentList) {
+      final map = part as Map<String, dynamic>;
+      final type = map['type'] as String;
+      switch (type) {
+        case 'text':
+          final text = map['text'] as String;
+          textBuffer.write(text);
+          parts.add(LLMTextPart(text));
+        case 'image_url':
+          final imageUrl =
+              (map['image_url'] as Map<String, dynamic>)['url'] as String;
+          parts.add(LLMImagePart(imageUrl));
+      }
+    }
+    return LLMContent(
+      role: LLMRole.model,
+      content: textBuffer.toString(),
+      parts: parts,
     );
   }
 

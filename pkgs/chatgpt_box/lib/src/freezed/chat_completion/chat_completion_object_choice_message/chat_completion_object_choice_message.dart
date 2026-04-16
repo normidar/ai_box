@@ -8,7 +8,8 @@ abstract class ChatCompletionObjectChoiceMessage
     with _$ChatCompletionObjectChoiceMessage {
   factory ChatCompletionObjectChoiceMessage({
     required String role,
-    String? content,
+    /// テキストのみの場合は String、マルチモーダルの場合は `List<dynamic>`。
+    dynamic content,
     String? refusal,
   }) = _ChatCompletionObjectChoiceMessage;
 

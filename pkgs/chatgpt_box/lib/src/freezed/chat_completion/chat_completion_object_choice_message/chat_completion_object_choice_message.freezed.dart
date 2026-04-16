@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatCompletionObjectChoiceMessage {
 
- String get role; String? get content; String? get refusal;
+ String get role;/// テキストのみの場合は String、マルチモーダルの場合は List<dynamic>。
+ dynamic get content; String? get refusal;
 /// Create a copy of ChatCompletionObjectChoiceMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,12 +29,12 @@ $ChatCompletionObjectChoiceMessageCopyWith<ChatCompletionObjectChoiceMessage> ge
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&(identical(other.content, content) || other.content == content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,role,content,refusal);
+int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal);
 
 @override
 String toString() {
@@ -48,7 +49,7 @@ abstract mixin class $ChatCompletionObjectChoiceMessageCopyWith<$Res>  {
   factory $ChatCompletionObjectChoiceMessageCopyWith(ChatCompletionObjectChoiceMessage value, $Res Function(ChatCompletionObjectChoiceMessage) _then) = _$ChatCompletionObjectChoiceMessageCopyWithImpl;
 @useResult
 $Res call({
- String role, String? content, String? refusal
+ String role, dynamic content, String? refusal
 });
 
 
@@ -69,7 +70,7 @@ class _$ChatCompletionObjectChoiceMessageCopyWithImpl<$Res>
   return _then(_self.copyWith(
 role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String?,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
+as dynamic,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -155,7 +156,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String role,  String? content,  String? refusal)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage() when $default != null:
 return $default(_that.role,_that.content,_that.refusal);case _:
@@ -176,7 +177,7 @@ return $default(_that.role,_that.content,_that.refusal);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String role,  String? content,  String? refusal)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String role,  dynamic content,  String? refusal)  $default,) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage():
 return $default(_that.role,_that.content,_that.refusal);case _:
@@ -196,7 +197,7 @@ return $default(_that.role,_that.content,_that.refusal);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String role,  String? content,  String? refusal)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String role,  dynamic content,  String? refusal)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatCompletionObjectChoiceMessage() when $default != null:
 return $default(_that.role,_that.content,_that.refusal);case _:
@@ -215,7 +216,8 @@ class _ChatCompletionObjectChoiceMessage extends ChatCompletionObjectChoiceMessa
   factory _ChatCompletionObjectChoiceMessage.fromJson(Map<String, dynamic> json) => _$ChatCompletionObjectChoiceMessageFromJson(json);
 
 @override final  String role;
-@override final  String? content;
+/// テキストのみの場合は String、マルチモーダルの場合は List<dynamic>。
+@override final  dynamic content;
 @override final  String? refusal;
 
 /// Create a copy of ChatCompletionObjectChoiceMessage
@@ -231,12 +233,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&(identical(other.content, content) || other.content == content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatCompletionObjectChoiceMessage&&(identical(other.role, role) || other.role == role)&&const DeepCollectionEquality().equals(other.content, content)&&(identical(other.refusal, refusal) || other.refusal == refusal));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,role,content,refusal);
+int get hashCode => Object.hash(runtimeType,role,const DeepCollectionEquality().hash(content),refusal);
 
 @override
 String toString() {
@@ -251,7 +253,7 @@ abstract mixin class _$ChatCompletionObjectChoiceMessageCopyWith<$Res> implement
   factory _$ChatCompletionObjectChoiceMessageCopyWith(_ChatCompletionObjectChoiceMessage value, $Res Function(_ChatCompletionObjectChoiceMessage) _then) = __$ChatCompletionObjectChoiceMessageCopyWithImpl;
 @override @useResult
 $Res call({
- String role, String? content, String? refusal
+ String role, dynamic content, String? refusal
 });
 
 
@@ -272,7 +274,7 @@ class __$ChatCompletionObjectChoiceMessageCopyWithImpl<$Res>
   return _then(_ChatCompletionObjectChoiceMessage(
 role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String?,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
+as dynamic,refusal: freezed == refusal ? _self.refusal : refusal // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

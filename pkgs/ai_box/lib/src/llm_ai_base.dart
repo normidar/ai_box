@@ -152,10 +152,39 @@ enum LLMResponseFormatType {
 }
 
 class LLMContent {
-  const LLMContent({required this.role, required this.content});
+  const LLMContent({required this.role, required this.content, this.parts});
 
   final LLMRole role;
+
+  /// テキストのみのレスポンスはこのフィールドに入る。
+  /// マルチモーダルの場合はテキストパートを連結した文字列になる。
   final String content;
+
+  /// 画像などを含むマルチモーダルレスポンスのとき設定される。
+  /// テキストのみの場合は null。
+  final List<LLMContentPart>? parts;
+
+  bool get hasImages => parts?.any((p) => p is LLMImagePart) ?? false;
+
+  List<LLMImagePart> get images =>
+      parts?.whereType<LLMImagePart>().toList() ?? [];
+}
+
+/// チャットメッセージの1パーツを表す sealed クラス。
+sealed class LLMContentPart {}
+
+/// テキストパーツ。
+class LLMTextPart extends LLMContentPart {
+  LLMTextPart(this.text);
+
+  final String text;
+}
+
+/// 画像パーツ。[url] は通常の https URL か data:image/...;base64,... 形式。
+class LLMImagePart extends LLMContentPart {
+  LLMImagePart(this.url);
+
+  final String url;
 }
 
 enum LLMRole { model, user, system }
