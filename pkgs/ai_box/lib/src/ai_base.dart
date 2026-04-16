@@ -22,7 +22,7 @@ class AIModel {
 
   final String id;
   final String? name;
-  final int? created;
+  final DateTime? created;
   final String? description;
   final int? contextLength;
 

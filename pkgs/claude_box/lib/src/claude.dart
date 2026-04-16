@@ -9,6 +9,9 @@ import 'package:claude_box/src/freezed/models/request_header/request_header.dart
 class Claude extends LLMAIBase {
   Claude({required super.apiKey});
 
+  /// Claude API は max_tokens が必須のため、未指定時に使うデフォルト値。
+  static const int defaultMaxTokens = 8000;
+
   RequestHeader get requestHeader =>
       RequestHeader(apiKey: apiKey, anthropicVersion: '2023-06-01');
 
@@ -36,7 +39,7 @@ class Claude extends LLMAIBase {
               ),
             )
             .toList(),
-        maxTokens: request.maxTokens ?? 8000,
+        maxTokens: request.maxTokens ?? defaultMaxTokens,
         system: systemMessages.isNotEmpty ? systemMessages : null,
         temperature: request.temperature,
         topP: request.topP,
@@ -69,11 +72,10 @@ class Claude extends LLMAIBase {
         messageRequest: MessageRequest(
           model: 'claude-sonnet-4-20250514',
           messages: [MessageContent(role: 'user', content: message)],
-          maxTokens: maxTokens ?? 5000, // 5000 tokens ~= 0.1 dollar
+          maxTokens: maxTokens ?? defaultMaxTokens,
         ),
       );
-      final content = messageResponse.content.first.text;
-      return content;
+      return messageResponse.content.first.text;
     } on Exception catch (_) {
       return null;
     }
@@ -91,9 +93,7 @@ class Claude extends LLMAIBase {
           (e) => AIModel(
             id: e.id,
             name: e.displayName,
-            created: DateTime.tryParse(e.createdAt) != null
-                ? DateTime.parse(e.createdAt).millisecondsSinceEpoch ~/ 1000
-                : null,
+            created: DateTime.tryParse(e.createdAt),
           ),
         )
         .toList();

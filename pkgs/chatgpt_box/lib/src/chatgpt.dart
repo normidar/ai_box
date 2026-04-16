@@ -31,7 +31,7 @@ class ChatGPT extends LLMAIBase {
         frequencyPenalty: request.frequencyPenalty,
         presencePenalty: request.presencePenalty,
         responseFormat: request.responseFormat != null
-            ? {'type': request.responseFormat!.type.name}
+            ? {'type': request.responseFormat!.type.toApiString()}
             : null,
       ),
     );
@@ -54,7 +54,7 @@ class ChatGPT extends LLMAIBase {
         .map(
           (e) => AIModel(
             id: e.id,
-            created: e.created,
+            created: DateTime.fromMillisecondsSinceEpoch(e.created * 1000),
           ),
         )
         .toList();

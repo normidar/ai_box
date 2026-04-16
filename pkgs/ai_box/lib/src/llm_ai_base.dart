@@ -6,27 +6,22 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   @override
   Future<LLMCompletionResponse> completions(LLMCompletionRequest request);
 
-  @override
-  Future<LLMResponse> chat({
+  /// [completions] の簡易ラッパー。
+  Future<LLMCompletionResponse> chat({
     required String model,
     required List<LLMContent> messages,
     int? maxTokens,
-  }) async {
-    final response = await completions(
+  }) {
+    return completions(
       LLMCompletionRequest(
         model: model,
         messages: messages,
         maxTokens: maxTokens,
       ),
     );
-    return LLMResponse(
-      content: response.content,
-      inputTokens: response.inputTokens,
-      outputTokens: response.outputTokens,
-    );
   }
 
-  @override
+  /// ユーザーとモデルが交互に発言する会話を文字列リストで渡す簡易ラッパー。
   Future<String> chatWithStrings({
     required String model,
     required List<String> messages,
@@ -47,7 +42,7 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
     ).then((value) => value.content.content);
   }
 
-  @override
+  /// 単一メッセージを送って返答文字列を得る最小ラッパー。
   Future<String> generateText({
     required String model,
     required String message,
@@ -61,26 +56,11 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   }
 }
 
+/// ai_box の LLM プロバイダーが実装すべき最小インターフェース。
+/// 便利メソッド (chat / chatWithStrings / generateText) は
+/// [LLMAIBase] の具象実装を使うこと。
 abstract class LLMAIInterface {
   Future<LLMCompletionResponse> completions(LLMCompletionRequest request);
-
-  Future<LLMResponse> chat({
-    required String model,
-    required List<LLMContent> messages,
-    int? maxTokens,
-  });
-
-  Future<String> chatWithStrings({
-    required String model,
-    required List<String> messages,
-    int? maxTokens,
-  });
-
-  Future<String> generateText({
-    required String model,
-    required String message,
-    int? maxTokens,
-  });
 
   Future<List<AIModel>> getModels();
 
@@ -160,25 +140,22 @@ class LLMResponseFormat {
       LLMResponseFormat(type: LLMResponseFormatType.jsonObject);
 }
 
-enum LLMResponseFormatType { text, jsonObject }
+enum LLMResponseFormatType {
+  text,
+  jsonObject;
+
+  /// OpenAI / Grok API に渡す snake_case 文字列に変換する。
+  String toApiString() => switch (this) {
+        LLMResponseFormatType.text => 'text',
+        LLMResponseFormatType.jsonObject => 'json_object',
+      };
+}
 
 class LLMContent {
   const LLMContent({required this.role, required this.content});
 
   final LLMRole role;
   final String content;
-}
-
-class LLMResponse {
-  const LLMResponse({
-    required this.content,
-    required this.inputTokens,
-    required this.outputTokens,
-  });
-
-  final LLMContent content;
-  final int inputTokens;
-  final int outputTokens;
 }
 
 enum LLMRole { model, user, system }
