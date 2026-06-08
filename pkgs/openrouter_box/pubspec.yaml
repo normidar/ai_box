@@ -1,0 +1,20 @@
+---
+dependencies:
+  ai_box: ^0.1.0
+  api_http: ^0.0.1
+description: '''An OpenRouter AI provider based on ai_box. '''
+dev_dependencies:
+  auto_exporter: any
+  build_runner: ^2.5.4
+  test: ^1.26.0
+  very_good_analysis: any
+environment:
+  sdk: ^3.7.0
+homepage: https://github.com/normidar/ai_box
+name: openrouter_box
+topics:
+  - ai
+  - openrouter
+  - ai-box
+  - llm
+version: 0.0.1
