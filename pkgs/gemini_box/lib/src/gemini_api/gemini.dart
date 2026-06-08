@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:ai_box/ai_box.dart';
+import 'package:api_http/api_http.dart' as ac;
 import 'package:gemini_box/gemini_box.dart';
 
 class Gemini extends LLMAIBase {
@@ -12,120 +14,16 @@ class Gemini extends LLMAIBase {
   Future<LLMCompletionResponse> completions(
     LLMCompletionRequest request,
   ) async {
-    // Gemini では system ロールのメッセージを systemInstruction に分離する
-    final systemMessages = request.messages
-        .where((e) => e.role == LLMRole.system)
-        .map((e) => e.content)
-        .join('\n');
-    final userMessages = request.messages
-        .where((e) => e.role != LLMRole.system)
-        .toList();
-
-    String? responseMimeType;
-    if (request.responseFormat?.type == LLMResponseFormatType.jsonObject) {
-      responseMimeType = 'application/json';
-    }
-
-    final response = await GeminiCore.generateContent(
+    final body = _buildGeminiBody(request);
+    final data = await _postGemini(
       apiKey: apiKey,
       model: request.model,
-      requestBody: RequestBody(
-        contents: userMessages
-            .map(
-              (e) => Content(
-                role: e.role == LLMRole.model ? 'model' : 'user',
-                parts: [Part(text: e.content)],
-              ),
-            )
-            .toList(),
-        systemInstruction: systemMessages.isNotEmpty
-            ? Content(parts: [Part(text: systemMessages)])
-            : null,
-        generationConfig: GenerationConfig(
-          maxOutputTokens: request.maxTokens,
-          temperature: request.temperature,
-          topP: request.topP,
-          stopSequences: request.stop,
-          seed: request.seed,
-          frequencyPenalty: request.frequencyPenalty,
-          presencePenalty: request.presencePenalty,
-          responseMimeType: responseMimeType,
-        ),
-      ),
+      body: body,
     );
-
-    final candidate = response.candidates?.first;
-    return LLMCompletionResponse(
-      content: _parseParts(candidate?.content?.parts ?? []),
-      inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
-      outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
-      finishReason: candidate?.finishReason?.name,
-    );
+    return _parseGeminiResponse(data);
   }
 
-  LLMContent _parseParts(List<Part> parts) {
-    // thought=true のパーツ（Thinking トークン）は除外する
-    final contentParts = parts.where((p) => p.thought != true).toList();
-
-    if (contentParts.isEmpty) {
-      return const LLMContent(role: LLMRole.model, content: '');
-    }
-
-    // テキストのみかどうかを確認
-    final hasImages = contentParts.any(
-      (p) => p.inlineData != null || p.fileData != null,
-    );
-    if (!hasImages) {
-      final text = contentParts.map((p) => p.text ?? '').join();
-      return LLMContent(role: LLMRole.model, content: text);
-    }
-
-    // マルチモーダル: テキスト・画像・tool_calls・コード実行などが混在
-    final llmParts = <LLMContentPart>[];
-    final textBuffer = StringBuffer();
-    for (final part in contentParts) {
-      if (part.text case final text?) {
-        textBuffer.write(text);
-        llmParts.add(LLMTextPart(text));
-      } else if (part.inlineData case final blob?) {
-        if (blob.mimeType.startsWith('audio/')) {
-          llmParts.add(LLMAudioPart(data: blob.data, mimeType: blob.mimeType));
-        } else {
-          // 画像（image/png など）は data URI に変換
-          final dataUri = 'data:${blob.mimeType};base64,${blob.data}';
-          llmParts.add(LLMImagePart(dataUri));
-        }
-      } else if (part.fileData case final file?) {
-        llmParts.add(LLMImagePart(file.fileUri));
-      } else if (part.functionCall case final fc?) {
-        llmParts.add(
-          LLMToolCallPart(
-            id: fc.id ?? fc.name,
-            name: fc.name,
-            arguments: fc.args ?? {},
-          ),
-        );
-      } else if (part.executableCode case final ec?) {
-        llmParts.add(
-          LLMCodeExecutionPart(code: ec.code, language: ec.language.name),
-        );
-      } else if (part.codeExecutionResult case final cer?) {
-        llmParts.add(
-          LLMCodeExecutionResultPart(
-            outcome: cer.outcome.name,
-            output: cer.output,
-          ),
-        );
-      }
-    }
-    return LLMContent(
-      role: LLMRole.model,
-      content: textBuffer.toString(),
-      parts: llmParts,
-    );
-  }
-
-  /// Generate content
+  /// Generate content (低レベル・型付き API)
   ///
   /// Ref: https://ai.google.dev/api/generate-content#method:-models.generatecontent
   Future<GenerateContentResponse> generateContent({
@@ -157,6 +55,270 @@ class Gemini extends LLMAIBase {
   Future<bool> validateKey() {
     return GeminiCore.getModels(apiKey: apiKey)
         .then((value) => value.isNotEmpty);
+  }
+}
+
+Map<String, dynamic> _buildGeminiBody(LLMCompletionRequest request) {
+  final system = request.messages
+      .where((e) => e.role == LLMRole.system)
+      .map((e) => e.text)
+      .where((t) => t.isNotEmpty)
+      .join('\n');
+  final convo =
+      request.messages.where((e) => e.role != LLMRole.system).toList();
+
+  final body = <String, dynamic>{
+    'contents': [for (final m in convo) _toGeminiContent(m)],
+  };
+  if (system.isNotEmpty) {
+    body['systemInstruction'] = {
+      'parts': [
+        {'text': system},
+      ],
+    };
+  }
+
+  final genConfig = <String, dynamic>{};
+  if (request.maxTokens != null) {
+    genConfig['maxOutputTokens'] = request.maxTokens;
+  }
+  if (request.temperature != null) {
+    genConfig['temperature'] = request.temperature;
+  }
+  if (request.topP != null) genConfig['topP'] = request.topP;
+  if (request.stop != null) genConfig['stopSequences'] = request.stop;
+  if (request.seed != null) genConfig['seed'] = request.seed;
+  if (request.frequencyPenalty != null) {
+    genConfig['frequencyPenalty'] = request.frequencyPenalty;
+  }
+  if (request.presencePenalty != null) {
+    genConfig['presencePenalty'] = request.presencePenalty;
+  }
+  final rf = request.responseFormat;
+  if (rf != null) {
+    if (rf.type == LLMResponseFormatType.jsonObject) {
+      genConfig['responseMimeType'] = 'application/json';
+    } else if (rf.type == LLMResponseFormatType.jsonSchema) {
+      genConfig['responseMimeType'] = 'application/json';
+      genConfig['responseSchema'] = rf.schema;
+    }
+  }
+  if (genConfig.isNotEmpty) body['generationConfig'] = genConfig;
+
+  final tools = request.tools;
+  if (tools != null && tools.isNotEmpty) {
+    body['tools'] = [
+      {
+        'functionDeclarations': [
+          for (final t in tools)
+            {
+              'name': t.name,
+              'description': t.description,
+              'parameters': t.parameters,
+            },
+        ],
+      },
+    ];
+    final tc = _toGeminiToolConfig(request.toolChoice);
+    if (tc != null) body['toolConfig'] = tc;
+  }
+  return body;
+}
+
+Map<String, dynamic> _toGeminiContent(LLMContent m) {
+  final role = m.role == LLMRole.model ? 'model' : 'user';
+  final parts = <Map<String, dynamic>>[];
+  for (final p in m.parts) {
+    if (p is LLMTextPart) {
+      if (p.text.isNotEmpty) parts.add({'text': p.text});
+    } else if (p is LLMImagePart) {
+      parts.add(_geminiMediaPart(p.url, p.base64Data, p.mimeType, 'image/png'));
+    } else if (p is LLMAudioPart) {
+      parts.add(
+        _geminiMediaPart(p.url, p.base64Data, p.mimeType, 'audio/mpeg'),
+      );
+    } else if (p is LLMFilePart) {
+      parts.add(
+        _geminiMediaPart(
+          p.url,
+          p.base64Data,
+          p.mimeType,
+          'application/octet-stream',
+        ),
+      );
+    } else if (p is LLMToolCallPart) {
+      parts.add({
+        'functionCall': {'name': p.name, 'args': p.arguments},
+      });
+    } else if (p is LLMToolResultPart) {
+      parts.add({
+        'functionResponse': {
+          'name': p.toolName ?? p.toolCallId,
+          'response': {'content': p.content},
+        },
+      });
+    }
+  }
+  return {'role': role, 'parts': parts};
+}
+
+Map<String, dynamic> _geminiMediaPart(
+  String? url,
+  String? base64Data,
+  String? mimeType,
+  String fallbackMime,
+) {
+  if (base64Data != null) {
+    return {
+      'inlineData': {
+        'mimeType': mimeType ?? fallbackMime,
+        'data': base64Data,
+      },
+    };
+  }
+  return {
+    'fileData': {
+      'fileUri': url ?? '',
+      'mimeType': mimeType ?? fallbackMime,
+    },
+  };
+}
+
+Map<String, dynamic>? _toGeminiToolConfig(LLMToolChoice? tc) {
+  if (tc == null) return null;
+  final mode = switch (tc.mode) {
+    LLMToolChoiceMode.auto => 'AUTO',
+    LLMToolChoiceMode.none => 'NONE',
+    LLMToolChoiceMode.any => 'ANY',
+  };
+  final cfg = <String, dynamic>{'mode': mode};
+  final toolName = tc.toolName;
+  if (toolName != null) cfg['allowedFunctionNames'] = [toolName];
+  return {'functionCallingConfig': cfg};
+}
+
+Map<String, dynamic> _asMap(Object? v) =>
+    v is Map<String, dynamic> ? v : const <String, dynamic>{};
+
+LLMCompletionResponse _parseGeminiResponse(Map<String, dynamic> data) {
+  final candidates = (data['candidates'] as List?) ?? const [];
+  final candidate = candidates.isNotEmpty
+      ? _asMap(candidates.first)
+      : const <String, dynamic>{};
+  final content = _asMap(candidate['content']);
+  final rawParts = (content['parts'] as List?) ?? const [];
+
+  final parts = <LLMContentPart>[];
+  for (final p in rawParts) {
+    if (p is! Map<String, dynamic>) continue;
+    if (p['thought'] == true) {
+      final t = p['text'];
+      if (t is String) parts.add(LLMReasoningPart(t));
+      continue;
+    }
+    if (p['text'] is String) {
+      parts.add(LLMTextPart(p['text'] as String));
+    } else if (p['inlineData'] is Map<String, dynamic>) {
+      parts.add(_geminiInlineToPart(p['inlineData'] as Map<String, dynamic>));
+    } else if (p['fileData'] is Map<String, dynamic>) {
+      final fd = p['fileData'] as Map<String, dynamic>;
+      parts.add(LLMImagePart.url((fd['fileUri'] ?? '').toString()));
+    } else if (p['functionCall'] is Map<String, dynamic>) {
+      final fc = p['functionCall'] as Map<String, dynamic>;
+      parts.add(
+        LLMToolCallPart(
+          id: (fc['id'] ?? fc['name'] ?? '').toString(),
+          name: (fc['name'] ?? '').toString(),
+          arguments:
+              (fc['args'] as Map<String, dynamic>?) ?? <String, dynamic>{},
+        ),
+      );
+    } else if (p['executableCode'] is Map<String, dynamic>) {
+      final ec = p['executableCode'] as Map<String, dynamic>;
+      parts.add(
+        LLMCodeExecutionPart(
+          code: (ec['code'] ?? '').toString(),
+          language: (ec['language'] ?? '').toString(),
+        ),
+      );
+    } else if (p['codeExecutionResult'] is Map<String, dynamic>) {
+      final cer = p['codeExecutionResult'] as Map<String, dynamic>;
+      parts.add(
+        LLMCodeExecutionResultPart(
+          outcome: (cer['outcome'] ?? '').toString(),
+          output: cer['output'] as String?,
+        ),
+      );
+    }
+  }
+
+  final usage = _asMap(data['usageMetadata']);
+  return LLMCompletionResponse(
+    content: LLMContent(role: LLMRole.model, parts: parts),
+    usage: LLMUsage(
+      inputTokens: (usage['promptTokenCount'] as num?)?.toInt() ?? 0,
+      outputTokens: (usage['candidatesTokenCount'] as num?)?.toInt() ?? 0,
+      cachedInputTokens: (usage['cachedContentTokenCount'] as num?)?.toInt(),
+      reasoningTokens: (usage['thoughtsTokenCount'] as num?)?.toInt(),
+    ),
+    finishReason: LLMFinishReason.parse(candidate['finishReason'] as String?),
+    model: data['modelVersion'] as String?,
+  );
+}
+
+LLMContentPart _geminiInlineToPart(Map<String, dynamic> blob) {
+  final mime = (blob['mimeType'] ?? '').toString();
+  final b64 = (blob['data'] ?? '').toString();
+  if (mime.startsWith('audio/')) {
+    return LLMAudioPart.base64(b64, mimeType: mime);
+  }
+  if (mime.startsWith('image/')) {
+    return LLMImagePart.bytes(base64Decode(b64), mimeType: mime);
+  }
+  return LLMFilePart.bytes(base64Decode(b64), mimeType: mime);
+}
+
+Future<Map<String, dynamic>> _postGemini({
+  required String apiKey,
+  required String model,
+  required Map<String, dynamic> body,
+}) async {
+  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  try {
+    final response = await ac.Api.post(
+      requestAcc: ac.PostRequestAcc(
+        url: '$baseUrl/models/$model:generateContent',
+        queryParameters: {'key': apiKey},
+        body: ac.JsonRequestBody(body),
+      ),
+    );
+    final statusCode = int.tryParse(response.statusCode) ?? 0;
+    final respBody = response.body;
+    Map<String, dynamic>? mapData;
+    if (respBody is ac.MapJsonResponseBody) {
+      mapData = respBody.data;
+    }
+    if (statusCode < 200 || statusCode >= 300) {
+      throw LLMException.fromHttp(
+        statusCode,
+        provider: 'gemini',
+        body: mapData ?? respBody,
+      );
+    }
+    if (mapData != null) return mapData;
+    throw LLMUnknownException(
+      'Unexpected response body from gemini',
+      provider: 'gemini',
+      raw: respBody,
+    );
+  } on LLMException {
+    rethrow;
+  } catch (e) {
+    throw LLMNetworkException(
+      'Network request failed',
+      provider: 'gemini',
+      raw: e,
+    );
   }
 }
 

@@ -19,6 +19,7 @@ abstract class ChatCompletionRequest with _$ChatCompletionRequest {
     @JsonKey(name: 'response_format') Map<String, dynamic>? responseFormat,
     List<Map<String, dynamic>>? tools,
     @JsonKey(name: 'tool_choice') dynamic toolChoice,
+
     /// DeepSeek-R1系と同様にThinkingプロセスを分離して取得する
     @JsonKey(name: 'reasoning_split') bool? reasoningSplit,
   }) = _ChatCompletionRequest;
