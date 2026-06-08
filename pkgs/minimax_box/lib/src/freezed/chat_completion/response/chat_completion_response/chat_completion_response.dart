@@ -15,8 +15,10 @@ abstract class ChatCompletionResponse with _$ChatCompletionResponse {
     required String model,
     required String object,
     ChatCompletionResponseUsage? usage,
+
     /// コンテンツポリシー違反フラグ（入力側）
     @JsonKey(name: 'input_sensitive') bool? inputSensitive,
+
     /// コンテンツポリシー違反フラグ（出力側）
     @JsonKey(name: 'output_sensitive') bool? outputSensitive,
   }) = _ChatCompletionResponse;

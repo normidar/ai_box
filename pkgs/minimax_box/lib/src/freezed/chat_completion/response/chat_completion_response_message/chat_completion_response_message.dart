@@ -9,6 +9,7 @@ abstract class ChatCompletionResponseMessage
   factory ChatCompletionResponseMessage({
     required String role,
     String? content,
+
     /// reasoning_split=true のとき Thinking プロセスが入る
     @JsonKey(name: 'reasoning_content') String? reasoningContent,
     @JsonKey(name: 'tool_calls') List<Map<String, dynamic>>? toolCalls,
