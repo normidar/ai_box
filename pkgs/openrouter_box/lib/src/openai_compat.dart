@@ -214,6 +214,19 @@ LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
     _appendOpenAiContentParts(rawContent, parts);
   }
 
+  // 生成画像（OpenRouter は message.images で返す）。
+  final images = message['images'];
+  if (images is List) {
+    for (final im in images) {
+      if (im is! Map<String, dynamic>) continue;
+      final imageUrl = im['image_url'];
+      final url = imageUrl is Map<String, dynamic> ? imageUrl['url'] : null;
+      if (url is String && url.isNotEmpty) {
+        parts.add(LLMImagePart.dataUri(url));
+      }
+    }
+  }
+
   final toolCalls = message['tool_calls'];
   if (toolCalls is List) {
     for (final tc in toolCalls) {

@@ -5,10 +5,12 @@ import 'package:ai_box/ai_box.dart';
 import 'package:openrouter_box/src/openai_compat.dart';
 import 'package:test/test.dart';
 
-/// `buildOpenAiBody` がマルチモーダル入力（画像・音声・ファイル）を
-/// OpenAI 互換のリクエストへ正しく変換するかを検証する。
+/// マルチモーダルの入出力を検証する。
 ///
-/// これらは OpenRouter のマルチモーダル対応モデルへ送られる実際のペイロード形状。
+/// - 入力: `buildOpenAiBody` が画像・音声・ファイルを OpenAI 互換リクエストへ
+///   正しく変換するか（OpenRouter へ送る実際のペイロード形状）。
+/// - 出力: `parseOpenAiResponse` が OpenRouter の生成画像（`message.images`）と
+///   音声（`message.audio`）をパーツへ復元できるか。
 void main() {
   final bytes = Uint8List.fromList(utf8.encode('hello-bytes'));
   final b64 = base64Encode(bytes);
@@ -123,6 +125,90 @@ void main() {
       expect((content[1] as Map)['type'], 'image_url');
       expect((content[2] as Map)['type'], 'input_audio');
       expect((content[3] as Map)['type'], 'file');
+    });
+  });
+
+  group('image output parsing', () {
+    test('message.images (OpenRouter) -> LLMImagePart with bytes', () {
+      final imgBytes = Uint8List.fromList([1, 2, 3, 4]);
+      final dataUri = 'data:image/png;base64,${base64Encode(imgBytes)}';
+      final res = parseOpenAiResponse({
+        'choices': [
+          {
+            'message': {
+              'role': 'assistant',
+              'content': 'Here is your image:',
+              'images': [
+                {
+                  'type': 'image_url',
+                  'image_url': {'url': dataUri},
+                },
+              ],
+            },
+            'finish_reason': 'stop',
+          },
+        ],
+        'usage': {'prompt_tokens': 5, 'completion_tokens': 1290},
+      });
+
+      expect(res.text, 'Here is your image:');
+      expect(res.content.hasImages, isTrue);
+      final img = res.content.images.single;
+      expect(img.hasBytes, isTrue);
+      expect(img.mimeType, 'image/png');
+      expect(img.bytes, imgBytes);
+      expect(res.usage.outputTokens, 1290);
+    });
+
+    test('image in content array is also captured', () {
+      final dataUri =
+          'data:image/png;base64,${base64Encode(
+            Uint8List.fromList([9, 9]),
+          )}';
+      final res = parseOpenAiResponse({
+        'choices': [
+          {
+            'message': {
+              'role': 'assistant',
+              'content': [
+                {'type': 'text', 'text': 'see:'},
+                {
+                  'type': 'image_url',
+                  'image_url': {'url': dataUri},
+                },
+              ],
+            },
+            'finish_reason': 'stop',
+          },
+        ],
+      });
+      expect(res.text, 'see:');
+      expect(res.content.images.single.bytes, [9, 9]);
+    });
+  });
+
+  group('audio output parsing', () {
+    test('message.audio -> LLMAudioPart with base64 + transcript', () {
+      final audioBytes = Uint8List.fromList([5, 6, 7, 8]);
+      final res = parseOpenAiResponse({
+        'choices': [
+          {
+            'message': {
+              'role': 'assistant',
+              'content': '',
+              'audio': {
+                'data': base64Encode(audioBytes),
+                'transcript': 'hello world',
+              },
+            },
+            'finish_reason': 'stop',
+          },
+        ],
+      });
+      expect(res.content.hasAudio, isTrue);
+      final audio = res.content.audioList.single;
+      expect(audio.base64Data, base64Encode(audioBytes));
+      expect(audio.transcript, 'hello world');
     });
   });
 }
