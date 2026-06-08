@@ -1,100 +1,31 @@
-import 'dart:convert';
-
 import 'package:ai_box/ai_box.dart';
 import 'package:deepseek_box/deepseek_box.dart';
+import 'package:deepseek_box/src/openai_compat.dart';
 
 class DeepSeek extends LLMAIBase {
   DeepSeek({required super.apiKey});
+
+  static const _url = 'https://api.deepseek.com/chat/completions';
+  static const _provider = 'deepseek';
 
   @override
   Future<LLMCompletionResponse> completions(
     LLMCompletionRequest request,
   ) async {
-    final chatCompletion = await DeepSeekCore.chatCompletion(
+    final body = buildOpenAiBody(request, maxTokensKey: 'max_tokens');
+    final data = await postOpenAiJson(
+      url: _url,
       apiKey: apiKey,
-      request: ChatCompletionRequest(
-        model: request.model,
-        messages: request.messages
-            .map(
-              (e) => ChatCompletionMessage(
-                role: e.role == LLMRole.model
-                    ? ChatCompletionRole.assistant
-                    : e.role == LLMRole.system
-                        ? ChatCompletionRole.system
-                        : ChatCompletionRole.user,
-                content: e.content,
-              ),
-            )
-            .toList(),
-        maxTokens: request.maxTokens,
-        temperature: request.temperature,
-        topP: request.topP,
-        stop: request.stop,
-        seed: request.seed,
-        frequencyPenalty: request.frequencyPenalty,
-        presencePenalty: request.presencePenalty,
-        responseFormat: request.responseFormat != null
-            ? {'type': request.responseFormat!.type.toApiString()}
-            : null,
-      ),
+      provider: _provider,
+      body: body,
     );
-    final choice = chatCompletion.choices.first;
-    return LLMCompletionResponse(
-      content: _parseMessage(
-        content: choice.message.content,
-        toolCalls: choice.message.toolCalls,
-      ),
-      inputTokens: chatCompletion.usage?.promptTokens ?? 0,
-      outputTokens: chatCompletion.usage?.completionTokens ?? 0,
-      finishReason: choice.finishReason,
-    );
-  }
-
-  LLMContent _parseMessage({
-    required String? content,
-    required List<Map<String, dynamic>>? toolCalls,
-  }) {
-    final parts = <LLMContentPart>[];
-    final text = content ?? '';
-    if (text.isNotEmpty) parts.add(LLMTextPart(text));
-
-    if (toolCalls != null) {
-      for (final tc in toolCalls) {
-        final fn = tc['function'] as Map<String, dynamic>;
-        final argsRaw = fn['arguments'] as String;
-        final args =
-            argsRaw.isEmpty
-            ? <String, dynamic>{}
-            : jsonDecode(argsRaw) as Map<String, dynamic>;
-        parts.add(
-          LLMToolCallPart(
-            id: tc['id'] as String,
-            name: fn['name'] as String,
-            arguments: args,
-          ),
-        );
-      }
-    }
-
-    if (parts.isEmpty) {
-      return const LLMContent(role: LLMRole.model, content: '');
-    }
-    if (parts.every((p) => p is LLMTextPart)) {
-      return LLMContent(role: LLMRole.model, content: text);
-    }
-    return LLMContent(role: LLMRole.model, content: text, parts: parts);
+    return parseOpenAiResponse(data);
   }
 
   @override
   Future<List<AIModel>> getModels() async {
     final modelList = await DeepSeekCore.listModels(apiKey: apiKey);
-    return modelList.data
-        .map(
-          (e) => AIModel(
-            id: e.id,
-          ),
-        )
-        .toList();
+    return modelList.data.map((e) => AIModel(id: e.id)).toList();
   }
 
   @override

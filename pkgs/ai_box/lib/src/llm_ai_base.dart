@@ -1,22 +1,56 @@
 import 'package:ai_box/src/ai_base.dart';
+import 'package:ai_box/src/content.dart';
+import 'package:ai_box/src/request.dart';
+import 'package:ai_box/src/response.dart';
+import 'package:ai_box/src/stream.dart';
 
+/// すべての LLM プロバイダー（ChatGPT / Claude / Gemini など）が
+/// 継承すべき抽象クラス。
+///
+/// 実装すべきは [completions] / [getModels] / [validateKey] の 3 つ。
+/// [chat] / [chatWithStrings] / [generateText] / [completionsStream] などの
+/// 便利メソッドはここで提供される。
 abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   const LLMAIBase({required super.apiKey});
 
   @override
   Future<LLMCompletionResponse> completions(LLMCompletionRequest request);
 
+  /// ストリーミング応答。
+  ///
+  /// 既定実装は [completions] を呼び、結果を 1 チャンクとして流す
+  /// （非インクリメンタルなフォールバック）。プロバイダーは真の SSE
+  /// ストリーミングでオーバーライドできる。
+  @override
+  Stream<LLMStreamChunk> completionsStream(
+    LLMCompletionRequest request,
+  ) async* {
+    final res = await completions(request);
+    yield LLMStreamChunk(
+      delta: res.content.text,
+      parts: res.content.parts,
+      finishReason: res.finishReason,
+      usage: res.usage,
+    );
+  }
+
   /// [completions] の簡易ラッパー。
   Future<LLMCompletionResponse> chat({
     required String model,
     required List<LLMContent> messages,
     int? maxTokens,
+    List<LLMTool>? tools,
+    LLMToolChoice? toolChoice,
+    LLMResponseFormat? responseFormat,
   }) {
     return completions(
       LLMCompletionRequest(
         model: model,
         messages: messages,
         maxTokens: maxTokens,
+        tools: tools,
+        toolChoice: toolChoice,
+        responseFormat: responseFormat,
       ),
     );
   }
@@ -31,7 +65,7 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
     final nowMessages = <LLMContent>[];
 
     for (final message in messages) {
-      nowMessages.add(LLMContent(role: nowAuthor, content: message));
+      nowMessages.add(LLMContent.text(nowAuthor, message));
       nowAuthor = nowAuthor == LLMRole.user ? LLMRole.model : LLMRole.user;
     }
 
@@ -39,7 +73,7 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
       model: model,
       messages: nowMessages,
       maxTokens: maxTokens,
-    ).then((value) => value.content.content);
+    ).then((value) => value.content.text);
   }
 
   /// 単一メッセージを送って返答文字列を得る最小ラッパー。
@@ -54,13 +88,51 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
       maxTokens: maxTokens,
     );
   }
+
+  /// 単一プロンプトの応答をテキストでストリーミングする。
+  Stream<String> generateTextStream({
+    required String model,
+    required String message,
+    int? maxTokens,
+  }) async* {
+    final req = LLMCompletionRequest(
+      model: model,
+      messages: [LLMContent.user(message)],
+      maxTokens: maxTokens,
+    );
+    await for (final chunk in completionsStream(req)) {
+      if (chunk.delta.isNotEmpty) yield chunk.delta;
+    }
+  }
+
+  /// 画像付きの簡易プロンプト。[images] に [LLMImagePart] を渡すだけで使える。
+  ///
+  /// ```dart
+  /// final answer = await ai.askWithImages(
+  ///   model: 'gpt-4o',
+  ///   prompt: 'この画像を説明して',
+  ///   images: [LLMImagePart.bytes(bytes, mimeType: 'image/png')],
+  /// );
+  /// ```
+  Future<String> askWithImages({
+    required String model,
+    required String prompt,
+    required List<LLMImagePart> images,
+    int? maxTokens,
+  }) {
+    return chat(
+      model: model,
+      messages: [LLMContent.user(prompt, attachments: images)],
+      maxTokens: maxTokens,
+    ).then((v) => v.content.text);
+  }
 }
 
 /// ai_box の LLM プロバイダーが実装すべき最小インターフェース。
-/// 便利メソッド (chat / chatWithStrings / generateText) は
-/// [LLMAIBase] の具象実装を使うこと。
 abstract class LLMAIInterface {
   Future<LLMCompletionResponse> completions(LLMCompletionRequest request);
+
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request);
 
   Future<List<AIModel>> getModels();
 
@@ -68,175 +140,3 @@ abstract class LLMAIInterface {
 
   Future<bool> validateKey();
 }
-
-/// OpenRouter互換のチャットリクエスト
-class LLMCompletionRequest {
-  const LLMCompletionRequest({
-    required this.model,
-    required this.messages,
-    this.temperature,
-    this.topP,
-    this.maxTokens,
-    this.stop,
-    this.seed,
-    this.frequencyPenalty,
-    this.presencePenalty,
-    this.responseFormat,
-  });
-
-  final String model;
-  final List<LLMContent> messages;
-
-  /// 生成のランダム性 (0.0〜2.0)
-  final double? temperature;
-
-  /// nucleus sampling (0.0〜1.0)
-  final double? topP;
-
-  /// 最大出力トークン数
-  final int? maxTokens;
-
-  /// 生成を停止する文字列のリスト
-  final List<String>? stop;
-
-  /// 再現性のためのシード値
-  final int? seed;
-
-  /// 繰り返しを減らすペナルティ (-2.0〜2.0)
-  final double? frequencyPenalty;
-
-  /// 新しいトピックを促すペナルティ (-2.0〜2.0)
-  final double? presencePenalty;
-
-  /// 出力フォーマット
-  final LLMResponseFormat? responseFormat;
-}
-
-/// OpenRouter互換のチャットレスポンス
-class LLMCompletionResponse {
-  const LLMCompletionResponse({
-    required this.content,
-    required this.inputTokens,
-    required this.outputTokens,
-    this.finishReason,
-  });
-
-  final LLMContent content;
-  final int inputTokens;
-  final int outputTokens;
-
-  /// 生成が終了した理由 (stop / length / tool_calls など)
-  final String? finishReason;
-}
-
-/// 出力フォーマット
-class LLMResponseFormat {
-  const LLMResponseFormat({required this.type});
-
-  final LLMResponseFormatType type;
-
-  static const text = LLMResponseFormat(type: LLMResponseFormatType.text);
-  static const jsonObject =
-      LLMResponseFormat(type: LLMResponseFormatType.jsonObject);
-}
-
-enum LLMResponseFormatType {
-  text,
-  jsonObject;
-
-  /// OpenAI / Grok API に渡す snake_case 文字列に変換する。
-  String toApiString() => switch (this) {
-        LLMResponseFormatType.text => 'text',
-        LLMResponseFormatType.jsonObject => 'json_object',
-      };
-}
-
-class LLMContent {
-  const LLMContent({required this.role, required this.content, this.parts});
-
-  final LLMRole role;
-
-  /// テキストのみのレスポンスはこのフィールドに入る。
-  /// マルチモーダルの場合はテキストパートを連結した文字列になる。
-  final String content;
-
-  /// 画像などを含むマルチモーダルレスポンスのとき設定される。
-  /// テキストのみの場合は null。
-  final List<LLMContentPart>? parts;
-
-  bool get hasImages => parts?.any((p) => p is LLMImagePart) ?? false;
-  List<LLMImagePart> get images =>
-      parts?.whereType<LLMImagePart>().toList() ?? [];
-
-  bool get hasToolCalls => parts?.any((p) => p is LLMToolCallPart) ?? false;
-  List<LLMToolCallPart> get toolCalls =>
-      parts?.whereType<LLMToolCallPart>().toList() ?? [];
-
-  bool get hasAudio => parts?.any((p) => p is LLMAudioPart) ?? false;
-  List<LLMAudioPart> get audioList =>
-      parts?.whereType<LLMAudioPart>().toList() ?? [];
-}
-
-/// チャットメッセージの1パーツを表す sealed クラス。
-sealed class LLMContentPart {}
-
-/// テキストパーツ。
-class LLMTextPart extends LLMContentPart {
-  LLMTextPart(this.text);
-
-  final String text;
-}
-
-/// 画像パーツ。[url] は通常の https URL か data:image/...;base64,... 形式。
-class LLMImagePart extends LLMContentPart {
-  LLMImagePart(this.url);
-
-  final String url;
-}
-
-/// ツール呼び出しパーツ。モデルが関数を呼び出す際に返される。
-class LLMToolCallPart extends LLMContentPart {
-  LLMToolCallPart({
-    required this.id,
-    required this.name,
-    required this.arguments,
-  });
-
-  final String id;
-  final String name;
-
-  /// 関数に渡す引数。OpenAI 系は JSON 文字列をパース済み。
-  final Map<String, dynamic> arguments;
-}
-
-/// 音声パーツ。[data] は base64 エンコード済み音声データ。
-class LLMAudioPart extends LLMContentPart {
-  LLMAudioPart({required this.data, this.transcript, this.mimeType});
-
-  final String data;
-
-  /// 音声のテキスト書き起こし（利用可能な場合のみ）。
-  final String? transcript;
-
-  /// audio/mp3、audio/wav など（Gemini の inlineData 由来の場合のみ）。
-  final String? mimeType;
-}
-
-/// コード実行パーツ（Gemini のみ）。モデルが実行を要求したコード。
-class LLMCodeExecutionPart extends LLMContentPart {
-  LLMCodeExecutionPart({required this.code, required this.language});
-
-  final String code;
-  final String language;
-}
-
-/// コード実行結果パーツ（Gemini のみ）。
-class LLMCodeExecutionResultPart extends LLMContentPart {
-  LLMCodeExecutionResultPart({required this.outcome, this.output});
-
-  /// 実行結果: ok / failed / deadline_exceeded
-  final String outcome;
-  final String? output;
-}
-
-enum LLMRole { model, user, system }
