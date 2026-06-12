@@ -1,6 +1,6 @@
 ---
 dependencies:
-  ai_box: ^0.2.0
+  ai_box: ^0.3.0
   api_http: ^0.0.1
 description: An OpenRouter AI provider based on ai_box.
 dev_dependencies:
@@ -17,4 +17,4 @@ topics:
   - openrouter
   - ai-box
   - llm
-version: 0.0.3
+version: 0.0.4

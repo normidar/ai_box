@@ -14,12 +14,13 @@ An abstract class that all AI providers (such as ChatGPT, Claude, Gemini, etc.) 
 
 ### Required Methods
 
-- `chat()`: Chat functionality
-- `getModelIds()`: Get a list of available model IDs
+- `completions()`: Chat completion
+- `getModels()`: Get a list of available models
 - `validateKey()`: Validate the API key
 
 ### Provided Utility Methods
 
+- `chat()` / `chatStream()`: Chat with structured messages
 - `chatWithStrings()`: Chat with an array of strings
 - `generateText()`: Simple text generation
 - `generateTextStream()`: Stream text output
@@ -162,89 +163,39 @@ final res = await ai.chat(
 
 ## Streaming
 
+Every provider implements true token-by-token SSE streaming:
+
 ```dart
 await for (final text in ai.generateTextStream(model: '...', message: 'Hi')) {
   stdout.write(text);
 }
 ```
 
-> Note: the base `completionsStream()` currently emits the full response as a
-> single chunk (a non-incremental fallback). Providers can override it with
-> true token-by-token SSE streaming.
-
-## Common Tests
-
-By using the `runLLMAIBaseCommonTests()` function, you can ensure that all `LLMAIBase` implementation classes are tested to the same standard.
-
-### Usage Example
+For full control (reasoning deltas, tool calls, usage), use `chatStream()` /
+`completionsStream()`:
 
 ```dart
-import 'package:test/test.dart';
-import 'package:your_ai_package/your_ai_package.dart';
-
-// Import the test utilities from ai_box
-import '../ai_box/test/test_utils.dart';
-
-void main() {
-  // Run the common tests
-  runLLMAIBaseCommonTests(
-    createInstance: () => YourAIClass(apiKey: 'your-api-key'),
-    instanceName: 'YourAI',
-    testModel: 'your-model-name',
-    skipApiTests: false, // Set to false to perform actual API calls
-  );
-
-  // Add any additional specific tests here
-  group('YourAI Specific Tests', () {
-    // ...
-  });
+await for (final chunk in ai.chatStream(
+  model: '...',
+  messages: [LLMContent.user('Hi')],
+)) {
+  stdout.write(chunk.delta);          // incremental text
+  logThinking(chunk.reasoningDelta);  // incremental thinking (if any)
+  if (chunk.isDone) {
+    // The final chunk carries the complete parts, finish reason and usage.
+    print(chunk.finishReason);
+    print(chunk.usage);
+  }
 }
 ```
-
-### Parameters
-
-- `createInstance`: A function that creates an instance of the LLMAIBase to be tested.
-- `instanceName`: The name of the class being tested (for display purposes in tests).
-- `testModel`: The name of the model to be used for testing.
-- `skipApiTests`: Whether to skip tests that involve API calls (default: false).
-
-### Test Contents
-
-The common tests include the following:
-
-#### Basic Tests
-
-- The instance is created correctly.
-- The API key is set.
-
-#### API Functionality Tests (if skipApiTests=false)
-
-- The API key can be validated.
-- Available model IDs can be retrieved.
-- The chat functionality works.
-- The chat functionality with strings works.
-- The text generation functionality works.
-- The `maxTokens` parameter is applied.
-
-#### Class Tests
-
-- `LLMContent` is created correctly.
-- The values of `LLMRole` are correct.
-
-#### Error Handling Tests
-
-- An error occurs with an empty message list.
-- An error occurs with an invalid model name.
 
 ## Adding a New AI Provider
 
 1. Create a class that inherits from `LLMAIBase`.
-2. Implement the required methods.
-3. Import `../ai_box/test/test_utils.dart` in the test file.
-4. Call `runLLMAIBaseCommonTests()`.
-5. Add specific tests as needed.
-
-This ensures that all AI providers maintain consistent quality.
+2. Implement `completions()`, `getModels()` and `validateKey()`.
+3. Optionally override `completionsStream()` with the provider's SSE
+   streaming (the shared helpers below already cover OpenAI-compatible
+   APIs).
 
 ### Shared helpers for provider implementations
 
@@ -254,14 +205,10 @@ Two opt-in libraries keep provider packages free of copy-pasted plumbing
 - `package:ai_box/provider_http.dart` — `requestJson()` runs an HTTP call and
   normalizes failures into the sealed `LLMException` hierarchy
   (`LLMNetworkException` on connectivity errors, `LLMException.fromHttp` on
-  non-2xx responses).
+  non-2xx responses). `postSseData()` / `decodeSseJson()` do the same for
+  SSE streaming endpoints.
 - `package:ai_box/openai_compat.dart` — `buildOpenAiBody()` /
-  `parseOpenAiResponse()` / `postOpenAiJson()` implement the OpenAI-compatible
-  Chat Completions wire format (multimodal content, tools, structured output),
-  shared by chatgpt_box, deepseek_box, grok_box, minimax_box and
-  openrouter_box.
-
-### Notes
-
-- The test utilities are located in the `test` folder and are not included in the main `lib` folder.
-- This prevents the `test` package dependency from being included in the production code.
+  `parseOpenAiResponse()` / `postOpenAiJson()` / `streamOpenAiCompletions()`
+  implement the OpenAI-compatible Chat Completions wire format (multimodal
+  content, tools, structured output, SSE streaming), shared by chatgpt_box,
+  deepseek_box, grok_box, minimax_box and openrouter_box.

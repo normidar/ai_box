@@ -1,3 +1,9 @@
+## 0.0.4
+
+- `completionsStream()` now uses real SSE streaming (incremental text /
+  reasoning deltas, cross-chunk tool-call assembly, usage from the final
+  chunk when OpenRouter provides it) instead of the single-chunk fallback.
+
 ## 0.0.3
 
 - Fix: network failures in `getModels()` / `listOpenRouterModels()` /

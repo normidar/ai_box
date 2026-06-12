@@ -1,3 +1,9 @@
+## 0.0.4
+
+- `completionsStream()` now uses real SSE streaming (incremental text and
+  `reasoning_content` deltas, cross-chunk tool-call assembly, usage via
+  `stream_options.include_usage`) instead of the single-chunk fallback.
+
 ## 0.0.3
 
 - Use the OpenAI-compat layer and HTTP error normalization shared via

@@ -47,6 +47,21 @@ class OpenRouter extends LLMAIBase {
     return parseOpenAiResponse(data);
   }
 
+  /// 真の SSE ストリーミング。テキストは増分で流れ、最終チャンクに
+  /// 完全なパーツ・完了理由・トークン使用量（OpenRouter は最終チャンクで
+  /// 自動付与）が入る。
+  @override
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
+    return streamOpenAiCompletions(
+      url: _url,
+      apiKey: apiKey,
+      provider: _provider,
+      request: request,
+      maxTokensKey: 'max_tokens',
+      extraHeaders: _rankingHeaders(),
+    );
+  }
+
   @override
   Future<List<AIModel>> getModels() async {
     final models = await OpenRouterCore.listModels(apiKey: apiKey);

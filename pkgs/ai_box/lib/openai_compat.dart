@@ -155,7 +155,8 @@ String _audioFormat(String? mimeType) {
   if (mimeType == null) return 'wav';
   if (mimeType.contains('mp3') || mimeType.contains('mpeg')) return 'mp3';
   if (mimeType.contains('wav')) return 'wav';
-  return mimeType.split('/').last;
+  // `audio/ogg;codecs=opus` のようなパラメータ付き MIME にも対応する。
+  return mimeType.split(';').first.split('/').last.trim();
 }
 
 Map<String, dynamic>? _toOpenAiResponseFormat(LLMResponseFormat? f) {
@@ -220,16 +221,7 @@ LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
 
   // 生成画像（OpenRouter は message.images で返す）。
   final images = message['images'];
-  if (images is List) {
-    for (final im in images) {
-      if (im is! Map<String, dynamic>) continue;
-      final imageUrl = im['image_url'];
-      final url = imageUrl is Map<String, dynamic> ? imageUrl['url'] : null;
-      if (url is String && url.isNotEmpty) {
-        parts.add(LLMImagePart.dataUri(url));
-      }
-    }
-  }
+  if (images is List) _appendOpenAiImages(images, parts);
 
   final toolCalls = message['tool_calls'];
   if (toolCalls is List) {
@@ -268,6 +260,17 @@ LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
     model: data['model'] as String?,
     id: data['id'] as String?,
   );
+}
+
+void _appendOpenAiImages(List<dynamic> images, List<LLMContentPart> out) {
+  for (final im in images) {
+    if (im is! Map<String, dynamic>) continue;
+    final imageUrl = im['image_url'];
+    final url = imageUrl is Map<String, dynamic> ? imageUrl['url'] : null;
+    if (url is String && url.isNotEmpty) {
+      out.add(LLMImagePart.dataUri(url));
+    }
+  }
 }
 
 void _appendOpenAiContentParts(List<dynamic> items, List<LLMContentPart> out) {
@@ -332,5 +335,158 @@ Future<Map<String, dynamic>> postOpenAiJson({
         body: JsonRequestBody(body),
       ),
     ),
+  );
+}
+
+/// OpenAI 互換 API へ `stream: true` で POST し、[LLMStreamChunk] を流す。
+///
+/// テキストは届いた増分ごとに `delta`、推論テキスト
+/// （DeepSeek の `reasoning_content` / OpenRouter の `reasoning`）は
+/// `reasoningDelta` として流れる。ツール呼び出しはチャンクをまたいで
+/// 組み立てられ、最終チャンクの `parts` に完全な応答として入る。
+///
+/// [includeUsage] を有効にすると `stream_options.include_usage` を送り、
+/// 最終チャンクでトークン使用量を受け取る（対応プロバイダーのみ）。
+Stream<LLMStreamChunk> streamOpenAiCompletions({
+  required String url,
+  required String apiKey,
+  required String provider,
+  required LLMCompletionRequest request,
+  required String maxTokensKey,
+  bool includeUsage = false,
+  Map<String, String> extraHeaders = const {},
+}) {
+  final body = buildOpenAiBody(request, maxTokensKey: maxTokensKey);
+  body['stream'] = true;
+  if (includeUsage) {
+    body['stream_options'] = {'include_usage': true};
+  }
+  final data = postSseData(
+    url: url,
+    provider: provider,
+    headers: {'Authorization': 'Bearer $apiKey', ...extraHeaders},
+    body: body,
+  );
+  return openAiChunksFromEvents(decodeSseJson(data), provider: provider);
+}
+
+/// OpenAI 互換のストリーミングイベント（`chat.completion.chunk`）列を
+/// [LLMStreamChunk] 列へ変換する。
+///
+/// ストリーム中の `error` イベントは [LLMException] に正規化して投げる。
+Stream<LLMStreamChunk> openAiChunksFromEvents(
+  Stream<Map<String, dynamic>> events, {
+  String? provider,
+}) async* {
+  final text = StringBuffer();
+  final reasoning = StringBuffer();
+  final toolCalls = <int, _StreamToolCall>{};
+  final images = <LLMContentPart>[];
+  LLMFinishReason? finishReason;
+  LLMUsage? usage;
+
+  await for (final event in events) {
+    final error = event['error'];
+    if (error is Map<String, dynamic>) {
+      throw _streamErrorToException(error, provider: provider, raw: event);
+    }
+    final rawUsage = event['usage'];
+    if (rawUsage is Map<String, dynamic>) {
+      usage = _parseOpenAiUsage(rawUsage);
+    }
+    final choices = event['choices'];
+    if (choices is! List || choices.isEmpty) continue;
+    final choice = choices.first;
+    if (choice is! Map<String, dynamic>) continue;
+
+    final rawFinish = choice['finish_reason'];
+    if (rawFinish is String && rawFinish.isNotEmpty) {
+      finishReason = LLMFinishReason.parse(rawFinish);
+    }
+    final delta = choice['delta'];
+    if (delta is! Map<String, dynamic>) continue;
+
+    final reasoningDelta = delta['reasoning_content'] ?? delta['reasoning'];
+    if (reasoningDelta is String && reasoningDelta.isNotEmpty) {
+      reasoning.write(reasoningDelta);
+      yield LLMStreamChunk(reasoningDelta: reasoningDelta);
+    }
+    final contentDelta = delta['content'];
+    if (contentDelta is String && contentDelta.isNotEmpty) {
+      text.write(contentDelta);
+      yield LLMStreamChunk(delta: contentDelta);
+    }
+    final imageDeltas = delta['images'];
+    if (imageDeltas is List) _appendOpenAiImages(imageDeltas, images);
+    final toolCallDeltas = delta['tool_calls'];
+    if (toolCallDeltas is List) {
+      _mergeToolCallDeltas(toolCallDeltas, toolCalls);
+    }
+  }
+
+  yield LLMStreamChunk(
+    parts: [
+      if (reasoning.isNotEmpty) LLMReasoningPart(reasoning.toString()),
+      if (text.isNotEmpty) LLMTextPart(text.toString()),
+      ...images,
+      for (final index in toolCalls.keys.toList()..sort())
+        toolCalls[index]!.toPart(),
+    ],
+    finishReason: finishReason ?? LLMFinishReason.other,
+    usage: usage,
+  );
+}
+
+/// チャンクをまたいで組み立て中のツール呼び出し。
+class _StreamToolCall {
+  String id = '';
+  String name = '';
+  final StringBuffer arguments = StringBuffer();
+
+  LLMToolCallPart toPart() => LLMToolCallPart(
+        id: id,
+        name: name,
+        arguments: _decodeArgs(arguments.toString()),
+      );
+}
+
+void _mergeToolCallDeltas(
+  List<dynamic> deltas,
+  Map<int, _StreamToolCall> toolCalls,
+) {
+  for (var i = 0; i < deltas.length; i++) {
+    final tc = deltas[i];
+    if (tc is! Map<String, dynamic>) continue;
+    final index = (tc['index'] as num?)?.toInt() ?? i;
+    final acc = toolCalls.putIfAbsent(index, _StreamToolCall.new);
+    final id = tc['id'];
+    if (id is String && id.isNotEmpty) acc.id = id;
+    final fn = tc['function'];
+    if (fn is Map<String, dynamic>) {
+      final name = fn['name'];
+      // name は最初のチャンクに完全な形で 1 度だけ届く。
+      if (name is String && name.isNotEmpty && acc.name.isEmpty) {
+        acc.name = name;
+      }
+      final args = fn['arguments'];
+      if (args is String) acc.arguments.write(args);
+    }
+  }
+}
+
+LLMException _streamErrorToException(
+  Map<String, dynamic> error, {
+  String? provider,
+  Object? raw,
+}) {
+  final code = error['code'];
+  if (code is num) {
+    return LLMException.fromHttp(code.toInt(), provider: provider, body: raw);
+  }
+  return LLMUnknownException(
+    (error['message'] ?? 'Stream error').toString(),
+    provider: provider,
+    code: (error['type'] ?? error['code'])?.toString(),
+    raw: raw,
   );
 }

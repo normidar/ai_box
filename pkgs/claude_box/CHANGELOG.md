@@ -1,3 +1,10 @@
+## 0.1.3
+
+- `completionsStream()` now uses real SSE streaming of the Messages API
+  (incremental text / thinking deltas, cross-event `input_json_delta`
+  tool-call assembly, usage from `message_start` / `message_delta`,
+  normalized `error` events) instead of the single-chunk fallback.
+
 ## 0.1.2
 
 - Use the HTTP error normalization shared via `ai_box`

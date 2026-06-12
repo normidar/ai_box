@@ -1,3 +1,17 @@
+## 0.3.0
+
+- Add true SSE streaming support:
+  - `package:ai_box/provider_http.dart`: `postSseData()` (streaming POST
+    with the same `LLMException` error normalization as `requestJson()`)
+    and `decodeSseJson()`.
+  - `package:ai_box/openai_compat.dart`: `streamOpenAiCompletions()` /
+    `openAiChunksFromEvents()` — incremental text / reasoning deltas and
+    cross-chunk tool-call assembly for OpenAI-compatible providers.
+- Add `LLMStreamChunk.reasoningDelta` for incremental thinking output.
+  The final chunk now carries the complete parts of the response.
+- Add `LLMAIBase.chatStream()`, the streaming counterpart of `chat()`.
+- Add `http` as a dependency.
+
 ## 0.2.0
 
 - Add `package:ai_box/openai_compat.dart`: the OpenAI-compatible request

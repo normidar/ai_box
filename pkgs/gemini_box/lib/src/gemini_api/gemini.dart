@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/provider_http.dart';
 import 'package:api_http/api_http.dart' as ac;
 import 'package:gemini_box/gemini_box.dart';
 
@@ -21,6 +21,20 @@ class Gemini extends LLMAIBase {
       body: body,
     );
     return _parseGeminiResponse(data);
+  }
+
+  /// 真の SSE ストリーミング。テキストは増分で流れ、最終チャンクに
+  /// 完全なパーツ・完了理由・トークン使用量が入る。
+  @override
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
+    final data = postSseData(
+      url: '$_baseUrl/models/${request.model}:streamGenerateContent',
+      provider: GeminiCore.provider,
+      headers: const {},
+      body: _buildGeminiBody(request),
+      queryParameters: {'key': apiKey, 'alt': 'sse'},
+    );
+    return geminiChunksFromEvents(decodeSseJson(data));
   }
 
   /// Generate content (低レベル・型付き API)
@@ -223,7 +237,9 @@ LLMCompletionResponse _parseGeminiResponse(Map<String, dynamic> data) {
     if (p['text'] is String) {
       parts.add(LLMTextPart(p['text'] as String));
     } else if (p['inlineData'] is Map<String, dynamic>) {
-      parts.add(_geminiInlineToPart(p['inlineData'] as Map<String, dynamic>));
+      parts.add(
+        geminiInlineDataToPart(p['inlineData'] as Map<String, dynamic>),
+      );
     } else if (p['fileData'] is Map<String, dynamic>) {
       final fd = p['fileData'] as Map<String, dynamic>;
       parts.add(LLMImagePart.url((fd['fileUri'] ?? '').toString()));
@@ -270,28 +286,17 @@ LLMCompletionResponse _parseGeminiResponse(Map<String, dynamic> data) {
   );
 }
 
-LLMContentPart _geminiInlineToPart(Map<String, dynamic> blob) {
-  final mime = (blob['mimeType'] ?? '').toString();
-  final b64 = (blob['data'] ?? '').toString();
-  if (mime.startsWith('audio/')) {
-    return LLMAudioPart.base64(b64, mimeType: mime);
-  }
-  if (mime.startsWith('image/')) {
-    return LLMImagePart.bytes(base64Decode(b64), mimeType: mime);
-  }
-  return LLMFilePart.bytes(base64Decode(b64), mimeType: mime);
-}
+const _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
 Future<Map<String, dynamic>> _postGemini({
   required String apiKey,
   required String model,
   required Map<String, dynamic> body,
 }) {
-  const baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
   return GeminiCore.requestJson(
     () => ac.Api.post(
       requestAcc: ac.PostRequestAcc(
-        url: '$baseUrl/models/$model:generateContent',
+        url: '$_baseUrl/models/$model:generateContent',
         queryParameters: {'key': apiKey},
         body: ac.JsonRequestBody(body),
       ),
