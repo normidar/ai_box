@@ -9,6 +9,7 @@ with the `provider/model` form, e.g. `openai/gpt-4o-mini`.
 ## Usage
 
 ```dart
+import 'package:ai_box/ai_box.dart';
 import 'package:openrouter_box/openrouter_box.dart';
 
 Future<void> main() async {

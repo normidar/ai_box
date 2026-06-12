@@ -1,3 +1,63 @@
 # minimax_box
 
+[![GitHub](https://img.shields.io/github/license/normidar/ai_box.svg)](https://github.com/normidar/ai_box/blob/main/LICENSE)
+[![pub package](https://img.shields.io/pub/v/minimax_box.svg)](https://pub.dev/packages/minimax_box)
+[![GitHub Stars](https://img.shields.io/github/stars/normidar/ai_box.svg)](https://github.com/normidar/ai_box/stargazers)
+[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/normidar)
+
 A MiniMax AI provider based on [ai_box](https://github.com/normidar/ai_box).
+
+## Usage
+
+```dart
+import 'package:ai_box/ai_box.dart';
+import 'package:minimax_box/minimax_box.dart';
+
+Future<void> main() async {
+  final ai = MiniMax(apiKey: '...');
+
+  // One-shot text generation.
+  final answer = await ai.generateText(
+    model: 'MiniMax-Text-01',
+    message: 'Say hello in one short sentence.',
+  );
+  print(answer);
+
+  // Multi-turn chat.
+  final res = await ai.chat(
+    model: 'MiniMax-Text-01',
+    messages: [
+      LLMContent.system('You are concise.'),
+      LLMContent.user('What is the capital of Japan?'),
+    ],
+    maxTokens: 32,
+  );
+  print(res.text);
+  print(res.usage); // token usage
+}
+```
+
+## Streaming
+
+True SSE streaming — text arrives incrementally and the final chunk carries
+the finish reason:
+
+```dart
+await for (final text in ai.generateTextStream(
+  model: 'MiniMax-Text-01',
+  message: 'Write a haiku about Dart.',
+)) {
+  stdout.write(text);
+}
+```
+
+## Models and key validation
+
+```dart
+final models = await ai.getModels();
+final ok = await ai.validateKey();
+```
+
+Tool calling, structured output and the sealed `LLMException` error
+hierarchy are all provided by [ai_box](https://pub.dev/packages/ai_box) —
+see its README for details.

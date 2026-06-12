@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:ai_box/ai_box.dart';
 import 'package:api_http/api_http.dart' as ac;
 import 'package:gemini_box/gemini_box.dart';
 import 'package:mime/mime.dart';
 
 class GeminiFilesCore {
+  static const _provider = 'gemini';
+
   static Future<List<GeminiFile>> getFiles({
     required String apiKey,
   }) async {
@@ -19,12 +22,27 @@ class GeminiFilesCore {
     final body = response.body;
     switch (body) {
       case ac.MapJsonResponseBody():
-        return (body.data['files'] as List)
+        // ファイルが 1 件もないとき、API は `files` キーなしの
+        // `{}` を返す。
+        final files = body.data['files'];
+        if (files == null) return const [];
+        if (files is! List) {
+          throw LLMUnknownException(
+            'Unexpected `files` field in response: $files',
+            provider: _provider,
+            raw: body.data,
+          );
+        }
+        return files
             .cast<Map<String, dynamic>>()
             .map(GeminiFile.fromJson)
             .toList();
       default:
-        throw Exception('Invalid response body: $body');
+        throw LLMUnknownException(
+          'Invalid response body: $body',
+          provider: _provider,
+          raw: body,
+        );
     }
   }
 
@@ -63,20 +81,28 @@ class GeminiFilesCore {
 
     final headers = response.headers.toJson();
 
-    return headers['x-goog-upload-url']!;
+    final uploadUrl = headers['x-goog-upload-url'];
+    if (uploadUrl == null) {
+      throw LLMUnknownException(
+        'Upload-start response did not include the x-goog-upload-url header',
+        provider: _provider,
+        raw: headers,
+      );
+    }
+    return uploadUrl;
   }
 
   static Future<GeminiFile> uploadFile({
     required String apiKey,
     required File file,
   }) async {
-    final mimeType = lookupMimeType(file.path);
+    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
     final contentLength = file.lengthSync();
     final displayName = file.path.split('/').last;
     final uploadUrl = await getUploadUrl(
       apiKey: apiKey,
       displayName: displayName,
-      mimeType: mimeType!,
+      mimeType: mimeType,
       contentLength: contentLength,
     );
 
@@ -108,9 +134,21 @@ class GeminiFilesCore {
     final body = response.body;
     switch (body) {
       case ac.MapJsonResponseBody():
-        return GeminiFile.fromJson(body.data['file'] as Map<String, dynamic>);
+        final fileJson = body.data['file'];
+        if (fileJson is! Map<String, dynamic>) {
+          throw LLMUnknownException(
+            'Upload response did not include a `file` object',
+            provider: _provider,
+            raw: body.data,
+          );
+        }
+        return GeminiFile.fromJson(fileJson);
       default:
-        throw Exception('Invalid response body: $body');
+        throw LLMUnknownException(
+          'Invalid response body: $body',
+          provider: _provider,
+          raw: body,
+        );
     }
   }
 }

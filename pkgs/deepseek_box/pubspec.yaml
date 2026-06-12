@@ -6,7 +6,7 @@ dependencies:
   json_annotation: ^4.9.0
 description: A DeepSeek AI provider based on ai_box.
 dev_dependencies:
-  auto_exporter: any
+  auto_exporter: ^4.0.0
   build_runner: ^2.5.4
   freezed: ^3.0.6
   json_serializable: ^6.9.5
@@ -15,6 +15,7 @@ dev_dependencies:
 environment:
   sdk: ^3.2.0
 homepage: https://github.com/normidar/ai_box
+repository: https://github.com/normidar/ai_box
 name: deepseek_box
 topics:
   - ai
