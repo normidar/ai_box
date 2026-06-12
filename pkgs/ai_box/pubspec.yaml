@@ -1,5 +1,4 @@
 ---
-dependencies: null
 description: A base class for all AI providers.
 dev_dependencies:
   auto_exporter: ^4.0.0

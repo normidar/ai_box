@@ -33,7 +33,7 @@ class MiniMax extends LLMAIBase {
     try {
       await MiniMaxCore.listModels(apiKey: apiKey);
       return true;
-    } on Exception catch (_) {
+    } on LLMException {
       return false;
     }
   }

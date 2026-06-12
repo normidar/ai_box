@@ -130,7 +130,7 @@ void main() {
     });
 
     test('is exhaustively switchable', () {
-      final LLMException e = const LLMRateLimitException('x');
+      const LLMException e = LLMRateLimitException('x');
       final label = switch (e) {
         LLMAuthException() => 'auth',
         LLMRateLimitException() => 'rate',

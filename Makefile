@@ -9,7 +9,7 @@ help:
 
 # ci
 .PHONY: ci
-ci: build_all analyze_all format melos_generate
+ci: build_all analyze_all test_all format melos_generate
 
 # analyze
 .PHONY: analyze_all
@@ -17,7 +17,17 @@ analyze_all: ## Analyze all apps with Flutter
 	@for dir in pkgs/*/; do \
 		if [ -d "$$dir" ]; then \
 			echo "Analyzing $$dir..."; \
-			cd "$$dir" && fvm dart analyze . && cd ../..; \
+			(cd "$$dir" && fvm dart analyze .) || exit 1; \
+		fi \
+	done
+
+# test
+.PHONY: test_all
+test_all: ## Run tests for all packages that have a test directory
+	@for dir in pkgs/*/; do \
+		if [ -d "$$dir/test" ]; then \
+			echo "Testing $$dir..."; \
+			(cd "$$dir" && fvm dart test) || exit 1; \
 		fi \
 	done
 
@@ -33,7 +43,7 @@ build_all: ## Same functionality as `fvm dart run build_runner build` (made avai
 	@for dir in pkgs/*/; do \
 		if [ -d "$$dir" ]; then \
 			echo "Building $$dir..."; \
-			cd "$$dir" && fvm dart run build_runner build --delete-conflicting-outputs && cd ../..; \
+			(cd "$$dir" && fvm dart run build_runner build --delete-conflicting-outputs) || exit 1; \
 		fi \
 	done
 

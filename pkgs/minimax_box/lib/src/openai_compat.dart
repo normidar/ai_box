@@ -4,6 +4,10 @@
 // 組み立てる（freezed のコード生成に依存しない）。
 //
 // このファイルは src/ 配下のパッケージ内部実装であり、公開 API には含めない。
+//
+// NOTE: 同名ファイルが OpenAI 互換の各プロバイダーパッケージ
+// （chatgpt_box / deepseek_box / grok_box / minimax_box / openrouter_box）に
+// 複製されている。修正する際は全パッケージの同名ファイルへ反映すること。
 import 'dart:convert';
 
 import 'package:ai_box/ai_box.dart';
@@ -200,7 +204,7 @@ LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
       (choice['message'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
   final parts = <LLMContentPart>[];
 
-  final reasoning = message['reasoning_content'];
+  final reasoning = message['reasoning_content'] ?? message['reasoning'];
   if (reasoning is String && reasoning.isNotEmpty) {
     parts.add(LLMReasoningPart(reasoning));
   }
@@ -210,6 +214,19 @@ LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
     parts.add(LLMTextPart(rawContent));
   } else if (rawContent is List) {
     _appendOpenAiContentParts(rawContent, parts);
+  }
+
+  // 生成画像（OpenRouter は message.images で返す）。
+  final images = message['images'];
+  if (images is List) {
+    for (final im in images) {
+      if (im is! Map<String, dynamic>) continue;
+      final imageUrl = im['image_url'];
+      final url = imageUrl is Map<String, dynamic> ? imageUrl['url'] : null;
+      if (url is String && url.isNotEmpty) {
+        parts.add(LLMImagePart.dataUri(url));
+      }
+    }
   }
 
   final toolCalls = message['tool_calls'];
@@ -290,11 +307,15 @@ LLMUsage _parseOpenAiUsage(Map<String, dynamic> usage) {
 }
 
 /// OpenAI 互換 API に POST し、JSON ボディを返す。失敗時は [LLMException]。
+///
+/// [extraHeaders] で OpenRouter 推奨の `HTTP-Referer` / `X-Title` などを
+/// 追加できる。
 Future<Map<String, dynamic>> postOpenAiJson({
   required String url,
   required String apiKey,
   required String provider,
   required Map<String, dynamic> body,
+  Map<String, String> extraHeaders = const {},
 }) async {
   try {
     final response = await Api.post(
@@ -303,6 +324,7 @@ Future<Map<String, dynamic>> postOpenAiJson({
         headers: RestHeaders({
           'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
+          ...extraHeaders,
         }),
         body: JsonRequestBody(body),
       ),

@@ -37,9 +37,13 @@ class Grok extends LLMAIBase {
 
   @override
   Future<bool> validateKey() async {
-    final apiKeyInfo = await GrokCore.getApiKeyInfo(apiKey: apiKey);
-    return !apiKeyInfo.teamBlocked &&
-        !apiKeyInfo.apiKeyDisabled &&
-        !apiKeyInfo.apiKeyBlocked;
+    try {
+      final apiKeyInfo = await GrokCore.getApiKeyInfo(apiKey: apiKey);
+      return !apiKeyInfo.teamBlocked &&
+          !apiKeyInfo.apiKeyDisabled &&
+          !apiKeyInfo.apiKeyBlocked;
+    } on LLMException {
+      return false;
+    }
   }
 }

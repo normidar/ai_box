@@ -8,18 +8,15 @@ class ChatCompletionsCore {
     required String apiKey,
     required ChatCompletionRequest request,
   }) async {
-    final response = await Api.post(
-      requestAcc: PostRequestAcc(
-        url: 'https://api.openai.com/v1/chat/completions',
-        headers: ChatGptCore.getHeaders(apiKey: apiKey),
-        body: JsonRequestBody(request.toJson()),
+    final data = await ChatGptCore.requestJson(
+      () => Api.post(
+        requestAcc: PostRequestAcc(
+          url: 'https://api.openai.com/v1/chat/completions',
+          headers: ChatGptCore.getHeaders(apiKey: apiKey),
+          body: JsonRequestBody(request.toJson()),
+        ),
       ),
     );
-    switch (response.body) {
-      case MapJsonResponseBody(:final data):
-        return ChatCompletionObject.fromJson(data);
-      case _:
-        throw Exception('Failed to create chat completion: ${response.body}');
-    }
+    return ChatCompletionObject.fromJson(data);
   }
 }

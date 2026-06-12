@@ -1,7 +1,8 @@
 ---
-dependencies: null
 dev_dependencies:
-  melos: ^7.4.0
+  # melos 7 以降は melos.yaml ではなく pub workspaces 設定が必要になり、
+  # 移行しない限りパッケージを認識できない。移行するまで 6.x に固定する。
+  melos: ^6.3.3
 environment:
   sdk: ^3.0.0
 name: ai_box
