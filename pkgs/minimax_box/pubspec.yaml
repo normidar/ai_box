@@ -1,6 +1,6 @@
 ---
 dependencies:
-  ai_box: ^0.1.0
+  ai_box: ^0.2.0
   api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
@@ -21,4 +21,4 @@ topics:
   - minimax
   - ai-box
   - llm
-version: 0.0.2
+version: 0.0.3

@@ -1,3 +1,10 @@
+## 0.0.4
+
+- Use the OpenAI-compat layer and HTTP error normalization shared via
+  `ai_box` (`package:ai_box/openai_compat.dart` /
+  `package:ai_box/provider_http.dart`) instead of package-local copies.
+  No behavior changes.
+
 ## 0.0.3
 
 - Normalize HTTP errors to typed `LLMException`s in `ModelsCore` / `ChatCompletionsCore` (status codes were previously not checked).

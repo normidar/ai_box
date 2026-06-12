@@ -1,6 +1,6 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:chatgpt_box/src/core/models_core.dart';
-import 'package:chatgpt_box/src/openai_compat.dart';
 
 class ChatGPT extends LLMAIBase {
   ChatGPT({required super.apiKey});

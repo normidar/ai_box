@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ai_box/ai_box.dart';
-import 'package:openrouter_box/src/openai_compat.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:test/test.dart';
 
-/// マルチモーダルの入出力を検証する。
+/// OpenAI 互換レイヤーのマルチモーダル入出力を検証する。
 ///
 /// - 入力: `buildOpenAiBody` が画像・音声・ファイルを OpenAI 互換リクエストへ
-///   正しく変換するか（OpenRouter へ送る実際のペイロード形状）。
-/// - 出力: `parseOpenAiResponse` が OpenRouter の生成画像（`message.images`）と
+///   正しく変換するか（プロバイダーへ送る実際のペイロード形状）。
+/// - 出力: `parseOpenAiResponse` が生成画像（OpenRouter の `message.images`）と
 ///   音声（`message.audio`）をパーツへ復元できるか。
 void main() {
   final bytes = Uint8List.fromList(utf8.encode('hello-bytes'));
@@ -75,9 +75,8 @@ void main() {
           attachments: [LLMAudioPart.bytes(bytes, mimeType: 'audio/mpeg')],
         ),
       );
-      final inner =
-          (content[1] as Map<String, dynamic>)['input_audio']
-              as Map<String, dynamic>;
+      final inner = (content[1] as Map<String, dynamic>)['input_audio']
+          as Map<String, dynamic>;
       expect(inner['format'], 'mp3');
     });
   });
@@ -161,10 +160,9 @@ void main() {
     });
 
     test('image in content array is also captured', () {
-      final dataUri =
-          'data:image/png;base64,${base64Encode(
-            Uint8List.fromList([9, 9]),
-          )}';
+      final dataUri = 'data:image/png;base64,${base64Encode(
+        Uint8List.fromList([9, 9]),
+      )}';
       final res = parseOpenAiResponse({
         'choices': [
           {

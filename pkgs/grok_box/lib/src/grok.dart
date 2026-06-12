@@ -1,6 +1,6 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:grok_box/grok_box.dart';
-import 'package:grok_box/src/openai_compat.dart';
 
 class Grok extends LLMAIBase {
   Grok({required super.apiKey});

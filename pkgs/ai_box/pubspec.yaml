@@ -1,4 +1,6 @@
 ---
+dependencies:
+  api_http: ^0.0.1
 description: A base class for all AI providers.
 dev_dependencies:
   auto_exporter: ^4.0.0
@@ -15,4 +17,4 @@ topics:
   - grok
   - gemini
   - claude
-version: 0.1.0
+version: 0.2.0

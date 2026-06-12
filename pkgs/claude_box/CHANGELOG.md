@@ -1,3 +1,9 @@
+## 0.1.2
+
+- Use the HTTP error normalization shared via `ai_box`
+  (`package:ai_box/provider_http.dart`) instead of a package-local copy.
+  No behavior changes.
+
 ## 0.1.1
 
 - Normalize HTTP errors to typed `LLMException`s in `ClaudeCore` (status codes were previously not checked).

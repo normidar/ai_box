@@ -1,16 +1,18 @@
-// OpenAI 互換 Chat Completions API のリクエスト構築・レスポンス解析ヘルパー。
-//
-// 画像・音声・ファイル・ツール呼び出し・構造化出力を raw JSON として
-// 組み立てる（freezed のコード生成に依存しない）。
-//
-// このファイルは src/ 配下のパッケージ内部実装であり、公開 API には含めない。
-//
-// NOTE: 同名ファイルが OpenAI 互換の各プロバイダーパッケージ
-// （chatgpt_box / deepseek_box / grok_box / minimax_box / openrouter_box）に
-// 複製されている。修正する際は全パッケージの同名ファイルへ反映すること。
+/// OpenAI 互換 Chat Completions API のリクエスト構築・レスポンス解析ヘルパー。
+///
+/// `import 'package:ai_box/openai_compat.dart';` して使う。
+/// OpenAI 互換の各プロバイダーパッケージ
+/// （chatgpt_box / deepseek_box / grok_box / minimax_box / openrouter_box）が
+/// 共有する実装で、アプリから直接使う想定ではない。
+///
+/// 画像・音声・ファイル・ツール呼び出し・構造化出力を raw JSON として
+/// 組み立てる（freezed のコード生成に依存しない）。
+library;
+
 import 'dart:convert';
 
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/provider_http.dart';
 import 'package:api_http/api_http.dart';
 
 /// [LLMCompletionRequest] を OpenAI 互換のリクエストボディに変換する。
@@ -197,10 +199,9 @@ dynamic _toOpenAiToolChoice(LLMToolChoice? tc) {
 /// OpenAI 互換のレスポンスボディを [LLMCompletionResponse] に変換する。
 LLMCompletionResponse parseOpenAiResponse(Map<String, dynamic> data) {
   final choices = (data['choices'] as List?) ?? const [];
-  final choice =
-      choices.isNotEmpty
-          ? choices.first as Map<String, dynamic>
-          : const <String, dynamic>{};
+  final choice = choices.isNotEmpty
+      ? choices.first as Map<String, dynamic>
+      : const <String, dynamic>{};
   final message =
       (choice['message'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
   final parts = <LLMContentPart>[];
@@ -317,9 +318,10 @@ Future<Map<String, dynamic>> postOpenAiJson({
   required String provider,
   required Map<String, dynamic> body,
   Map<String, String> extraHeaders = const {},
-}) async {
-  try {
-    final response = await Api.post(
+}) {
+  return requestJson(
+    provider: provider,
+    send: () => Api.post(
       requestAcc: PostRequestAcc(
         url: url,
         headers: RestHeaders({
@@ -329,33 +331,6 @@ Future<Map<String, dynamic>> postOpenAiJson({
         }),
         body: JsonRequestBody(body),
       ),
-    );
-    final statusCode = int.tryParse(response.statusCode) ?? 0;
-    final respBody = response.body;
-    Map<String, dynamic>? mapData;
-    if (respBody is MapJsonResponseBody) {
-      mapData = respBody.data;
-    }
-    if (statusCode < 200 || statusCode >= 300) {
-      throw LLMException.fromHttp(
-        statusCode,
-        provider: provider,
-        body: mapData ?? respBody,
-      );
-    }
-    if (mapData != null) return mapData;
-    throw LLMUnknownException(
-      'Unexpected response body from $provider',
-      provider: provider,
-      raw: respBody,
-    );
-  } on LLMException {
-    rethrow;
-  } catch (e) {
-    throw LLMNetworkException(
-      'Network request failed',
-      provider: provider,
-      raw: e,
-    );
-  }
+    ),
+  );
 }

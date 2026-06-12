@@ -1,4 +1,4 @@
-import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/provider_http.dart' as provider_http;
 import 'package:api_http/api_http.dart';
 
 class ChatGptCore {
@@ -11,38 +11,9 @@ class ChatGptCore {
     });
   }
 
-  /// HTTP リクエストを実行し、JSON マップを取り出す。
-  ///
-  /// 通信失敗は [LLMNetworkException]、非 2xx は [LLMException.fromHttp] に
-  /// 正規化する。
+  /// HTTP リクエストを実行し、JSON マップを取り出す
+  /// （[provider_http.requestJson] への委譲）。
   static Future<Map<String, dynamic>> requestJson(
     Future<ResponseAcc> Function() send,
-  ) async {
-    ResponseAcc response;
-    try {
-      response = await send();
-    } catch (e) {
-      throw LLMNetworkException(
-        'Network request failed',
-        provider: provider,
-        raw: e,
-      );
-    }
-    final statusCode = int.tryParse(response.statusCode) ?? 0;
-    final body = response.body;
-    final mapData = body is MapJsonResponseBody ? body.data : null;
-    if (statusCode < 200 || statusCode >= 300) {
-      throw LLMException.fromHttp(
-        statusCode,
-        provider: provider,
-        body: mapData ?? body,
-      );
-    }
-    if (mapData != null) return mapData;
-    throw LLMUnknownException(
-      'Unexpected response body from $provider',
-      provider: provider,
-      raw: body,
-    );
-  }
+  ) => provider_http.requestJson(provider: provider, send: send);
 }

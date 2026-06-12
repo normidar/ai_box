@@ -1,3 +1,10 @@
+## 0.0.3
+
+- Use the OpenAI-compat layer and HTTP error normalization shared via
+  `ai_box` (`package:ai_box/openai_compat.dart` /
+  `package:ai_box/provider_http.dart`) instead of package-local copies.
+  No behavior changes.
+
 ## 0.0.2
 
 - Fix the `ai_box` dependency constraint (`^0.0.1` -> `^0.1.0`).
