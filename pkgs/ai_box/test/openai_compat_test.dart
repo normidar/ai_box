@@ -1,11 +1,12 @@
 import 'package:ai_box/ai_box.dart';
-import 'package:minimax_box/src/openai_compat.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:test/test.dart';
 
 /// OpenAI 互換レイヤー（openai_compat.dart）の検証。
 ///
-/// このファイルは OpenAI 互換の各プロバイダーパッケージに複製されている
-/// 実装の、リクエスト構築とレスポンス解析を確認する。
+/// OpenAI 互換の各プロバイダーパッケージ（chatgpt_box / deepseek_box /
+/// grok_box / minimax_box / openrouter_box）が共有する、リクエスト構築と
+/// レスポンス解析を確認する。
 void main() {
   group('buildOpenAiBody', () {
     test('maps request fields to the OpenAI wire format', () {

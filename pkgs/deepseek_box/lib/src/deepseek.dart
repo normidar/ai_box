@@ -1,6 +1,6 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:deepseek_box/deepseek_box.dart';
-import 'package:deepseek_box/src/openai_compat.dart';
 
 class DeepSeek extends LLMAIBase {
   DeepSeek({required super.apiKey});

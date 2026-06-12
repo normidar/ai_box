@@ -246,6 +246,21 @@ The common tests include the following:
 
 This ensures that all AI providers maintain consistent quality.
 
+### Shared helpers for provider implementations
+
+Two opt-in libraries keep provider packages free of copy-pasted plumbing
+(they are not exported from `package:ai_box/ai_box.dart`):
+
+- `package:ai_box/provider_http.dart` — `requestJson()` runs an HTTP call and
+  normalizes failures into the sealed `LLMException` hierarchy
+  (`LLMNetworkException` on connectivity errors, `LLMException.fromHttp` on
+  non-2xx responses).
+- `package:ai_box/openai_compat.dart` — `buildOpenAiBody()` /
+  `parseOpenAiResponse()` / `postOpenAiJson()` implement the OpenAI-compatible
+  Chat Completions wire format (multimodal content, tools, structured output),
+  shared by chatgpt_box, deepseek_box, grok_box, minimax_box and
+  openrouter_box.
+
 ### Notes
 
 - The test utilities are located in the `test` folder and are not included in the main `lib` folder.

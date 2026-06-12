@@ -1,6 +1,6 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:minimax_box/minimax_box.dart';
-import 'package:minimax_box/src/openai_compat.dart';
 
 class MiniMax extends LLMAIBase {
   MiniMax({required super.apiKey});

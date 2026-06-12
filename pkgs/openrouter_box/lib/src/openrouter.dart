@@ -1,8 +1,8 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:openrouter_box/src/core/openrouter_core.dart';
 import 'package:openrouter_box/src/models/openrouter_key_info.dart';
 import 'package:openrouter_box/src/models/openrouter_model.dart';
-import 'package:openrouter_box/src/openai_compat.dart';
 
 /// OpenRouter（`https://openrouter.ai`）プロバイダー。
 ///

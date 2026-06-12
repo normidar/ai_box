@@ -1,4 +1,4 @@
-import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/provider_http.dart';
 import 'package:api_http/api_http.dart';
 import 'package:openrouter_box/src/models/openrouter_key_info.dart';
 import 'package:openrouter_box/src/models/openrouter_model.dart';
@@ -17,13 +17,16 @@ class OpenRouterCore {
   /// このエンドポイントは認証不要だが、[apiKey] を渡すとアカウントに応じた
   /// 結果を取得できる。
   static Future<List<OpenRouterModel>> listModels({String? apiKey}) async {
-    final response = await Api.get(
-      requestAcc: GetRequestAcc(
-        url: '$baseUrl/models',
-        headers: getHeaders(apiKey: apiKey),
-      ),
+    final data = await requestJson(
+      provider: _provider,
+      send:
+          () => Api.get(
+            requestAcc: GetRequestAcc(
+              url: '$baseUrl/models',
+              headers: getHeaders(apiKey: apiKey),
+            ),
+          ),
     );
-    final data = _ensureOk(response.statusCode, response.body);
     final list = (data['data'] as List?) ?? const [];
     return [
       for (final e in list)
@@ -35,13 +38,16 @@ class OpenRouterCore {
   ///
   /// 認証が必要なため、キーの有効性確認にも使える。
   static Future<OpenRouterKeyInfo> getKeyInfo({required String apiKey}) async {
-    final response = await Api.get(
-      requestAcc: GetRequestAcc(
-        url: '$baseUrl/key',
-        headers: getHeaders(apiKey: apiKey),
-      ),
+    final data = await requestJson(
+      provider: _provider,
+      send:
+          () => Api.get(
+            requestAcc: GetRequestAcc(
+              url: '$baseUrl/key',
+              headers: getHeaders(apiKey: apiKey),
+            ),
+          ),
     );
-    final data = _ensureOk(response.statusCode, response.body);
     return OpenRouterKeyInfo.fromJson(data);
   }
 
@@ -60,24 +66,5 @@ class OpenRouterCore {
       if (referer != null) 'HTTP-Referer': referer,
       if (title != null) 'X-Title': title,
     });
-  }
-
-  /// 2xx を確認しつつ JSON マップを取り出す。失敗時は [LLMException]。
-  static Map<String, dynamic> _ensureOk(String statusCodeStr, Object? body) {
-    final statusCode = int.tryParse(statusCodeStr) ?? 0;
-    final mapData = body is MapJsonResponseBody ? body.data : null;
-    if (statusCode < 200 || statusCode >= 300) {
-      throw LLMException.fromHttp(
-        statusCode,
-        provider: _provider,
-        body: mapData ?? body,
-      );
-    }
-    if (mapData != null) return mapData;
-    throw LLMUnknownException(
-      'Unexpected response body from $_provider',
-      provider: _provider,
-      raw: body,
-    );
   }
 }
