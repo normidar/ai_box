@@ -1,7 +1,7 @@
 ---
 dependencies:
   ai_box: ^0.1.0
-  api_http: ^0.0.1
+  api_http: ">=0.0.1 <0.2.0"
 description: An OpenRouter AI provider based on ai_box.
 dev_dependencies:
   auto_exporter: any
