@@ -1,3 +1,8 @@
+## 0.1.4
+
+- `easyTalk()` now uses `claude-sonnet-4-6` instead of
+  `claude-sonnet-4-20250514`, which Anthropic retires on June 15, 2026.
+
 ## 0.1.3
 
 - `completionsStream()` now uses real SSE streaming of the Messages API

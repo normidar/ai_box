@@ -49,7 +49,7 @@ class OpenRouterModel {
     );
   }
 
-  /// モデル ID（例: `openai/gpt-4o-mini`）。
+  /// モデル ID（例: `openai/gpt-5.4-mini`）。
   final String id;
 
   /// 人間可読のモデル名。

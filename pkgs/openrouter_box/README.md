@@ -4,7 +4,7 @@ An [OpenRouter](https://openrouter.ai) AI provider based on [ai_box](https://git
 
 OpenRouter exposes a single OpenAI-compatible endpoint that routes to many
 underlying models (OpenAI, Anthropic, Google, Meta, and more). Specify a model
-with the `provider/model` form, e.g. `openai/gpt-4o-mini`.
+with the `provider/model` form, e.g. `openai/gpt-5.4-mini`.
 
 ## Usage
 
@@ -17,14 +17,14 @@ Future<void> main() async {
 
   // One-shot text generation.
   final answer = await ai.generateText(
-    model: 'openai/gpt-4o-mini',
+    model: 'openai/gpt-5.4-mini',
     message: 'Say hello in one short sentence.',
   );
   print(answer);
 
   // Multi-turn chat.
   final res = await ai.chat(
-    model: 'openai/gpt-4o-mini',
+    model: 'openai/gpt-5.4-mini',
     messages: [
       LLMContent.system('You are concise.'),
       LLMContent.user('What is the capital of Japan?'),
