@@ -4,7 +4,7 @@ dependencies:
   api_http: ^0.0.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
-  mime: ^1.0.4
+  mime: ">=1.0.4 <3.0.0"
 description: A gemini AI provider based on ai_box.
 dev_dependencies:
   auto_exporter: any
