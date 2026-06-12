@@ -12,6 +12,7 @@ environment:
   sdk: ^3.0.0
 name: ai_box
 homepage: https://github.com/normidar/ai_box
+repository: https://github.com/normidar/ai_box
 topics:
   - ai
   - chatgpt

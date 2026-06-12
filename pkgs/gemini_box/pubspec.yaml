@@ -7,7 +7,7 @@ dependencies:
   mime: ^1.0.4
 description: A gemini AI provider based on ai_box.
 dev_dependencies:
-  auto_exporter: any
+  auto_exporter: ^4.0.0
   build_runner: ^2.4.15
   freezed: ^3.0.6
   json_serializable: ^6.9.5
@@ -16,6 +16,7 @@ dev_dependencies:
 environment:
   sdk: ^3.4.0
 homepage: https://github.com/normidar/ai_box
+repository: https://github.com/normidar/ai_box
 name: gemini_box
 topics:
   - ai
