@@ -19,8 +19,8 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   /// ストリーミング応答。
   ///
   /// 既定実装は [completions] を呼び、結果を 1 チャンクとして流す
-  /// （非インクリメンタルなフォールバック）。プロバイダーは真の SSE
-  /// ストリーミングでオーバーライドできる。
+  /// （非インクリメンタルなフォールバック）。各プロバイダーパッケージは
+  /// 真の SSE ストリーミングでオーバーライドしている。
   @override
   Stream<LLMStreamChunk> completionsStream(
     LLMCompletionRequest request,
@@ -28,6 +28,7 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
     final res = await completions(request);
     yield LLMStreamChunk(
       delta: res.content.text,
+      reasoningDelta: res.content.reasoning,
       parts: res.content.parts,
       finishReason: res.finishReason,
       usage: res.usage,
@@ -44,6 +45,27 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
     LLMResponseFormat? responseFormat,
   }) {
     return completions(
+      LLMCompletionRequest(
+        model: model,
+        messages: messages,
+        maxTokens: maxTokens,
+        tools: tools,
+        toolChoice: toolChoice,
+        responseFormat: responseFormat,
+      ),
+    );
+  }
+
+  /// [completionsStream] の簡易ラッパー（[chat] のストリーミング版）。
+  Stream<LLMStreamChunk> chatStream({
+    required String model,
+    required List<LLMContent> messages,
+    int? maxTokens,
+    List<LLMTool>? tools,
+    LLMToolChoice? toolChoice,
+    LLMResponseFormat? responseFormat,
+  }) {
+    return completionsStream(
       LLMCompletionRequest(
         model: model,
         messages: messages,

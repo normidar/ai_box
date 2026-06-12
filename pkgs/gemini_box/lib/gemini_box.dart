@@ -53,6 +53,7 @@ export 'package:gemini_box/src/freezed/tool/tool_config/tool_config/tool_config.
 export 'package:gemini_box/src/gemini_api/gemini.dart';
 export 'package:gemini_box/src/gemini_api/gemini_core.dart';
 export 'package:gemini_box/src/gemini_api/gemini_files_core.dart';
+export 'package:gemini_box/src/gemini_api/gemini_stream.dart';
 export 'package:gemini_box/src/gemini_file/gemini_file.dart';
 export 'package:gemini_box/src/response_schema/model_info.dart';
 export 'package:gemini_box/src/response_schema/schema_type.dart';

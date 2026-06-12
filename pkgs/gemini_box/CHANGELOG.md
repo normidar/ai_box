@@ -1,3 +1,10 @@
+## 0.0.4
+
+- `completionsStream()` now uses real SSE streaming via
+  `streamGenerateContent` + `alt=sse` (incremental text / thought deltas,
+  function calls and generated media in the final chunk) instead of the
+  single-chunk fallback.
+
 ## 0.0.3
 
 - Use the HTTP error normalization shared via `ai_box`

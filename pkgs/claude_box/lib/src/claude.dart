@@ -1,6 +1,8 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/provider_http.dart';
 import 'package:api_http/api_http.dart';
 import 'package:claude_box/src/claude_core.dart';
+import 'package:claude_box/src/claude_stream.dart';
 import 'package:claude_box/src/freezed/message/request/message_request/message_request.dart';
 import 'package:claude_box/src/freezed/message/response/message_response.dart';
 import 'package:claude_box/src/freezed/models/list_models_response/list_models_response.dart';
@@ -27,44 +29,27 @@ class Claude extends LLMAIBase {
   Future<LLMCompletionResponse> completions(
     LLMCompletionRequest request,
   ) async {
-    // Claude では system ロールのメッセージを system フィールドに分離する。
-    final system = request.messages
-        .where((e) => e.role == LLMRole.system)
-        .map((e) => e.text)
-        .where((t) => t.isNotEmpty)
-        .join('\n');
-    final convo =
-        request.messages.where((e) => e.role != LLMRole.system).toList();
-
-    final body = <String, dynamic>{
-      'model': request.model,
-      'messages': _toClaudeMessages(convo),
-      'max_tokens': request.maxTokens ?? defaultMaxTokens,
-      if (system.isNotEmpty) 'system': system,
-      if (request.temperature != null) 'temperature': request.temperature,
-      if (request.topP != null) 'top_p': request.topP,
-      if (request.stop != null) 'stop_sequences': request.stop,
-    };
-    final tools = request.tools;
-    if (tools != null && tools.isNotEmpty) {
-      body['tools'] = [
-        for (final t in tools)
-          {
-            'name': t.name,
-            'description': t.description,
-            'input_schema': t.parameters,
-          },
-      ];
-      final tc = _toClaudeToolChoice(request.toolChoice);
-      if (tc != null) body['tool_choice'] = tc;
-    }
-
     final data = await _postClaude(
       apiKey: apiKey,
       version: _version,
-      body: body,
+      body: _buildClaudeBody(request),
     );
     return _parseClaudeResponse(data);
+  }
+
+  /// 真の SSE ストリーミング。テキストは増分で流れ、最終チャンクに
+  /// 完全なパーツ・完了理由・トークン使用量が入る。
+  @override
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
+    final body = _buildClaudeBody(request);
+    body['stream'] = true;
+    final data = postSseData(
+      url: _messagesUrl,
+      provider: ClaudeCore.provider,
+      headers: {'x-api-key': apiKey, 'anthropic-version': _version},
+      body: body,
+    );
+    return claudeChunksFromEvents(decodeSseJson(data));
   }
 
   Future<MessageResponse> createMessage({
@@ -122,6 +107,43 @@ class Claude extends LLMAIBase {
       return false;
     }
   }
+}
+
+const _messagesUrl = 'https://api.anthropic.com/v1/messages';
+
+Map<String, dynamic> _buildClaudeBody(LLMCompletionRequest request) {
+  // Claude では system ロールのメッセージを system フィールドに分離する。
+  final system = request.messages
+      .where((e) => e.role == LLMRole.system)
+      .map((e) => e.text)
+      .where((t) => t.isNotEmpty)
+      .join('\n');
+  final convo =
+      request.messages.where((e) => e.role != LLMRole.system).toList();
+
+  final body = <String, dynamic>{
+    'model': request.model,
+    'messages': _toClaudeMessages(convo),
+    'max_tokens': request.maxTokens ?? Claude.defaultMaxTokens,
+    if (system.isNotEmpty) 'system': system,
+    if (request.temperature != null) 'temperature': request.temperature,
+    if (request.topP != null) 'top_p': request.topP,
+    if (request.stop != null) 'stop_sequences': request.stop,
+  };
+  final tools = request.tools;
+  if (tools != null && tools.isNotEmpty) {
+    body['tools'] = [
+      for (final t in tools)
+        {
+          'name': t.name,
+          'description': t.description,
+          'input_schema': t.parameters,
+        },
+    ];
+    final tc = _toClaudeToolChoice(request.toolChoice);
+    if (tc != null) body['tool_choice'] = tc;
+  }
+  return body;
 }
 
 List<Map<String, dynamic>> _toClaudeMessages(List<LLMContent> messages) {
@@ -256,7 +278,7 @@ Future<Map<String, dynamic>> _postClaude({
   return ClaudeCore.requestJson(
     () => Api.post(
       requestAcc: PostRequestAcc(
-        url: 'https://api.anthropic.com/v1/messages',
+        url: _messagesUrl,
         headers: RestHeaders({
           'x-api-key': apiKey,
           'anthropic-version': version,
