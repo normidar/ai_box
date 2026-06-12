@@ -104,24 +104,21 @@ class OpenRouterModel {
   @override
   String toString() => 'OpenRouterModel(id: $id, name: $name)';
 
+  static const _modalityNames = <String, LLMModality>{
+    'text': LLMModality.text,
+    'image': LLMModality.image,
+    'audio': LLMModality.audio,
+    'video': LLMModality.video,
+    'file': LLMModality.document,
+    'document': LLMModality.document,
+  };
+
   static Set<LLMModality>? _parseModalities(Object? raw) {
     if (raw is! List) return null;
-    final out = <LLMModality>{};
-    for (final m in raw) {
-      switch (m.toString()) {
-        case 'text':
-          out.add(LLMModality.text);
-        case 'image':
-          out.add(LLMModality.image);
-        case 'audio':
-          out.add(LLMModality.audio);
-        case 'video':
-          out.add(LLMModality.video);
-        case 'file':
-        case 'document':
-          out.add(LLMModality.document);
-      }
-    }
+    final out = <LLMModality>{
+      for (final m in raw)
+        if (_modalityNames[m.toString()] != null) _modalityNames[m.toString()]!,
+    };
     return out.isEmpty ? null : out;
   }
 }

@@ -7,6 +7,11 @@ import 'package:claude_box/src/freezed/models/list_models_response/list_models_r
 import 'package:claude_box/src/freezed/models/model_info/model_info.dart';
 import 'package:claude_box/src/freezed/models/request_header/request_header.dart';
 
+/// Anthropic Claude（Messages API）プロバイダー。
+///
+/// [LLMCompletionRequest] のうち Claude API にないフィールド
+/// （`seed` / `frequencyPenalty` / `presencePenalty` / `responseFormat`）は
+/// 送信されず無視される。
 class Claude extends LLMAIBase {
   Claude({required super.apiKey});
 
@@ -109,8 +114,13 @@ class Claude extends LLMAIBase {
   }
 
   @override
-  Future<bool> validateKey() {
-    return listModels().then((value) => value.data.isNotEmpty);
+  Future<bool> validateKey() async {
+    try {
+      final res = await listModels();
+      return res.data.isNotEmpty;
+    } on LLMException {
+      return false;
+    }
   }
 }
 
@@ -191,7 +201,7 @@ dynamic _toClaudeToolChoice(LLMToolChoice? tc) {
     case LLMToolChoiceMode.auto:
       return {'type': 'auto'};
     case LLMToolChoiceMode.none:
-      return null;
+      return {'type': 'none'};
     case LLMToolChoiceMode.any:
       return {'type': 'any'};
   }
@@ -242,9 +252,9 @@ Future<Map<String, dynamic>> _postClaude({
   required String apiKey,
   required String version,
   required Map<String, dynamic> body,
-}) async {
-  try {
-    final response = await Api.post(
+}) {
+  return ClaudeCore.requestJson(
+    () => Api.post(
       requestAcc: PostRequestAcc(
         url: 'https://api.anthropic.com/v1/messages',
         headers: RestHeaders({
@@ -254,33 +264,6 @@ Future<Map<String, dynamic>> _postClaude({
         }),
         body: JsonRequestBody(body),
       ),
-    );
-    final statusCode = int.tryParse(response.statusCode) ?? 0;
-    final respBody = response.body;
-    Map<String, dynamic>? mapData;
-    if (respBody is MapJsonResponseBody) {
-      mapData = respBody.data;
-    }
-    if (statusCode < 200 || statusCode >= 300) {
-      throw LLMException.fromHttp(
-        statusCode,
-        provider: 'claude',
-        body: mapData ?? respBody,
-      );
-    }
-    if (mapData != null) return mapData;
-    throw LLMUnknownException(
-      'Unexpected response body from claude',
-      provider: 'claude',
-      raw: respBody,
-    );
-  } on LLMException {
-    rethrow;
-  } catch (e) {
-    throw LLMNetworkException(
-      'Network request failed',
-      provider: 'claude',
-      raw: e,
-    );
-  }
+    ),
+  );
 }

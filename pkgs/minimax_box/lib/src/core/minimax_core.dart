@@ -1,41 +1,37 @@
+import 'package:ai_box/ai_box.dart';
 import 'package:api_http/api_http.dart';
 import 'package:minimax_box/minimax_box.dart';
 
 class MiniMaxCore {
   static const _baseUrl = 'https://api.minimax.io/v1';
+  static const _provider = 'minimax';
 
   static Future<ChatCompletionResponse> chatCompletion({
     required String apiKey,
     required ChatCompletionRequest request,
   }) async {
-    final response = await Api.post(
-      requestAcc: PostRequestAcc(
-        url: '$_baseUrl/chat/completions',
-        headers: _getHeaders(apiKey: apiKey),
-        body: JsonRequestBody(request.toJson()),
+    final data = await _requestJson(
+      () => Api.post(
+        requestAcc: PostRequestAcc(
+          url: '$_baseUrl/chat/completions',
+          headers: _getHeaders(apiKey: apiKey),
+          body: JsonRequestBody(request.toJson()),
+        ),
       ),
     );
-    switch (response.body) {
-      case MapJsonResponseBody(:final data):
-        return ChatCompletionResponse.fromJson(data);
-      case _:
-        throw Exception('Failed to chat completion: ${response.body}');
-    }
+    return ChatCompletionResponse.fromJson(data);
   }
 
   static Future<ModelList> listModels({required String apiKey}) async {
-    final response = await Api.get(
-      requestAcc: GetRequestAcc(
-        url: '$_baseUrl/models',
-        headers: _getHeaders(apiKey: apiKey),
+    final data = await _requestJson(
+      () => Api.get(
+        requestAcc: GetRequestAcc(
+          url: '$_baseUrl/models',
+          headers: _getHeaders(apiKey: apiKey),
+        ),
       ),
     );
-    switch (response.body) {
-      case MapJsonResponseBody(:final data):
-        return ModelList.fromJson(data);
-      case _:
-        throw Exception('Failed to list models: ${response.body}');
-    }
+    return ModelList.fromJson(data);
   }
 
   static RestHeaders _getHeaders({required String apiKey}) {
@@ -43,5 +39,40 @@ class MiniMaxCore {
       'Authorization': 'Bearer $apiKey',
       'Content-Type': 'application/json',
     });
+  }
+
+  /// HTTP リクエストを実行し、JSON マップを取り出す。
+  ///
+  /// 通信失敗は [LLMNetworkException]、非 2xx は [LLMException.fromHttp] に
+  /// 正規化する。
+  static Future<Map<String, dynamic>> _requestJson(
+    Future<ResponseAcc> Function() send,
+  ) async {
+    ResponseAcc response;
+    try {
+      response = await send();
+    } catch (e) {
+      throw LLMNetworkException(
+        'Network request failed',
+        provider: _provider,
+        raw: e,
+      );
+    }
+    final statusCode = int.tryParse(response.statusCode) ?? 0;
+    final body = response.body;
+    final mapData = body is MapJsonResponseBody ? body.data : null;
+    if (statusCode < 200 || statusCode >= 300) {
+      throw LLMException.fromHttp(
+        statusCode,
+        provider: _provider,
+        body: mapData ?? body,
+      );
+    }
+    if (mapData != null) return mapData;
+    throw LLMUnknownException(
+      'Unexpected response body from $_provider',
+      provider: _provider,
+      raw: body,
+    );
   }
 }

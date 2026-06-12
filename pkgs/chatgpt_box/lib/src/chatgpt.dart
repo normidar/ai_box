@@ -40,9 +40,12 @@ class ChatGPT extends LLMAIBase {
   }
 
   @override
-  Future<bool> validateKey() {
-    return ModelsCore.listModels(
-      apiKey: apiKey,
-    ).then((value) => value.data.isNotEmpty);
+  Future<bool> validateKey() async {
+    try {
+      final models = await ModelsCore.listModels(apiKey: apiKey);
+      return models.data.isNotEmpty;
+    } on LLMException {
+      return false;
+    }
   }
 }

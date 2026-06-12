@@ -62,6 +62,17 @@ jobs:
             fi
           done
 
+      - name: Run tests
+        run: |
+          for dir in pkgs/*/; do
+            if [ -d "$dir/test" ]; then
+              echo "Testing $dir"
+              cd "$dir"
+              dart test
+              cd - > /dev/null
+            fi
+          done
+
       - name: Check git diff
         run: |
           git diff --exit-code

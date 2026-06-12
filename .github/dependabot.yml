@@ -6,6 +6,12 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "pub"
-    directory: "/"
+    directories:
+      - "/"
+      - "/pkgs/*"
     schedule:
       interval: "monthly"
+    ignore:
+      # melos 7 requires migrating to pub workspaces; pinned to 6.x until then.
+      - dependency-name: "melos"
+        update-types: ["version-update:semver-major"]

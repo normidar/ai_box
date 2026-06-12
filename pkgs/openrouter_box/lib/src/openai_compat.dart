@@ -3,8 +3,11 @@
 // 画像・音声・ファイル・ツール呼び出し・構造化出力を raw JSON として
 // 組み立てる（freezed のコード生成に依存しない）。
 //
-// OpenRouter は OpenAI 互換のため、ChatGPT などと同じ実装を共有できる。
 // このファイルは src/ 配下のパッケージ内部実装であり、公開 API には含めない。
+//
+// NOTE: 同名ファイルが OpenAI 互換の各プロバイダーパッケージ
+// （chatgpt_box / deepseek_box / grok_box / minimax_box / openrouter_box）に
+// 複製されている。修正する際は全パッケージの同名ファイルへ反映すること。
 import 'dart:convert';
 
 import 'package:ai_box/ai_box.dart';

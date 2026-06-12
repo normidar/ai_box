@@ -52,9 +52,13 @@ class Gemini extends LLMAIBase {
   }
 
   @override
-  Future<bool> validateKey() {
-    return GeminiCore.getModels(apiKey: apiKey)
-        .then((value) => value.isNotEmpty);
+  Future<bool> validateKey() async {
+    try {
+      final models = await GeminiCore.getModels(apiKey: apiKey);
+      return models.isNotEmpty;
+    } on LLMException {
+      return false;
+    }
   }
 }
 
@@ -282,44 +286,17 @@ Future<Map<String, dynamic>> _postGemini({
   required String apiKey,
   required String model,
   required Map<String, dynamic> body,
-}) async {
+}) {
   const baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-  try {
-    final response = await ac.Api.post(
+  return GeminiCore.requestJson(
+    () => ac.Api.post(
       requestAcc: ac.PostRequestAcc(
         url: '$baseUrl/models/$model:generateContent',
         queryParameters: {'key': apiKey},
         body: ac.JsonRequestBody(body),
       ),
-    );
-    final statusCode = int.tryParse(response.statusCode) ?? 0;
-    final respBody = response.body;
-    Map<String, dynamic>? mapData;
-    if (respBody is ac.MapJsonResponseBody) {
-      mapData = respBody.data;
-    }
-    if (statusCode < 200 || statusCode >= 300) {
-      throw LLMException.fromHttp(
-        statusCode,
-        provider: 'gemini',
-        body: mapData ?? respBody,
-      );
-    }
-    if (mapData != null) return mapData;
-    throw LLMUnknownException(
-      'Unexpected response body from gemini',
-      provider: 'gemini',
-      raw: respBody,
-    );
-  } on LLMException {
-    rethrow;
-  } catch (e) {
-    throw LLMNetworkException(
-      'Network request failed',
-      provider: 'gemini',
-      raw: e,
-    );
-  }
+    ),
+  );
 }
 
 class GeminiFiles {

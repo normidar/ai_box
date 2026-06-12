@@ -1,7 +1,10 @@
+import 'package:ai_box/ai_box.dart';
 import 'package:api_http/api_http.dart' as ac;
 import 'package:gemini_box/gemini_box.dart';
 
 class GeminiCore {
+  static const provider = 'gemini';
+
   static const _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
   /// Ref: https://ai.google.dev/api/generate-content#method:-models.generatecontent
@@ -10,44 +13,73 @@ class GeminiCore {
     required String model,
     required RequestBody requestBody,
   }) async {
-    final requestAcc = ac.PostRequestAcc(
-      url: '$_baseUrl/models/$model:generateContent',
-      queryParameters: {
-        'key': apiKey,
-      },
-      body: ac.JsonRequestBody(requestBody.toJson()),
+    final data = await requestJson(
+      () => ac.Api.post(
+        requestAcc: ac.PostRequestAcc(
+          url: '$_baseUrl/models/$model:generateContent',
+          queryParameters: {
+            'key': apiKey,
+          },
+          body: ac.JsonRequestBody(requestBody.toJson()),
+        ),
+      ),
     );
-    final response = await ac.Api.post(requestAcc: requestAcc);
-    final body = response.body;
-    switch (body) {
-      case ac.MapJsonResponseBody():
-        return GenerateContentResponse.fromJson(body.data);
-      default:
-        throw Exception('Invalid response body: $body');
-    }
+    return GenerateContentResponse.fromJson(data);
   }
 
   /// Ref: https://ai.google.dev/api/models#method:-models.list
   static Future<List<ModelInfo>> getModels({
     required String apiKey,
   }) async {
-    final requestAcc = ac.GetRequestAcc(
-      url: '$_baseUrl/models',
-      queryParameters: {
-        'key': apiKey,
-        'pageSize': '1000',
-      },
+    final data = await requestJson(
+      () => ac.Api.get(
+        requestAcc: ac.GetRequestAcc(
+          url: '$_baseUrl/models',
+          queryParameters: {
+            'key': apiKey,
+            'pageSize': '1000',
+          },
+        ),
+      ),
     );
-    final response = await ac.Api.get(requestAcc: requestAcc);
-    final body = response.body;
-    switch (body) {
-      case ac.MapJsonResponseBody():
-        return (body.data['models'] as List)
-            .cast<Map<String, dynamic>>()
-            .map(ModelInfo.fromJson)
-            .toList();
-      default:
-        throw Exception('Invalid response body: $body');
+    return ((data['models'] as List?) ?? const [])
+        .cast<Map<String, dynamic>>()
+        .map(ModelInfo.fromJson)
+        .toList();
+  }
+
+  /// HTTP リクエストを実行し、JSON マップを取り出す。
+  ///
+  /// 通信失敗は [LLMNetworkException]、非 2xx は [LLMException.fromHttp] に
+  /// 正規化する。
+  static Future<Map<String, dynamic>> requestJson(
+    Future<ac.ResponseAcc> Function() send,
+  ) async {
+    ac.ResponseAcc response;
+    try {
+      response = await send();
+    } catch (e) {
+      throw LLMNetworkException(
+        'Network request failed',
+        provider: provider,
+        raw: e,
+      );
     }
+    final statusCode = int.tryParse(response.statusCode) ?? 0;
+    final body = response.body;
+    final mapData = body is ac.MapJsonResponseBody ? body.data : null;
+    if (statusCode < 200 || statusCode >= 300) {
+      throw LLMException.fromHttp(
+        statusCode,
+        provider: provider,
+        body: mapData ?? body,
+      );
+    }
+    if (mapData != null) return mapData;
+    throw LLMUnknownException(
+      'Unexpected response body from $provider',
+      provider: provider,
+      raw: body,
+    );
   }
 }
