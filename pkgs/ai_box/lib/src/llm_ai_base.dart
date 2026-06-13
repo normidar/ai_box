@@ -131,7 +131,7 @@ abstract class LLMAIBase extends AIBase implements LLMAIInterface {
   ///
   /// ```dart
   /// final answer = await ai.askWithImages(
-  ///   model: 'gpt-4o',
+  ///   model: 'gpt-5.5',
   ///   prompt: 'この画像を説明して',
   ///   images: [LLMImagePart.bytes(bytes, mimeType: 'image/png')],
   /// );

@@ -65,7 +65,7 @@ class Claude extends LLMAIBase {
     try {
       final res = await completions(
         LLMCompletionRequest(
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           messages: [LLMContent.user(message)],
           maxTokens: maxTokens ?? defaultMaxTokens,
         ),

@@ -38,7 +38,7 @@ import 'dart:typed_data';
 import 'package:ai_box/ai_box.dart';
 
 final res = await ai.chat(
-  model: 'gpt-4o',
+  model: 'gpt-5.5',
   messages: [
     LLMContent.user('Describe these', attachments: [
       LLMImagePart.bytes(pngBytes, mimeType: 'image/png'),
@@ -117,7 +117,7 @@ try {
 
 ```dart
 final res = await ai.chat(
-  model: 'gpt-4o',
+  model: 'gpt-5.5',
   messages: [LLMContent.user('Weather in Tokyo?')],
   tools: [
     LLMTool(
@@ -146,7 +146,7 @@ for (final call in res.toolCalls) {
 
 ```dart
 final res = await ai.chat(
-  model: 'gpt-4o',
+  model: 'gpt-5.5',
   messages: [LLMContent.user('Extract name and age')],
   responseFormat: LLMResponseFormat.jsonSchema(
     schema: {

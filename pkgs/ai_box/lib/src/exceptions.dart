@@ -5,7 +5,7 @@
 ///
 /// ```dart
 /// try {
-///   await ai.generateText(model: 'gpt-4o', message: 'hi');
+///   await ai.generateText(model: 'gpt-5.5', message: 'hi');
 /// } on LLMException catch (e) {
 ///   final msg = switch (e) {
 ///     LLMAuthException() => 'APIキーが無効です',

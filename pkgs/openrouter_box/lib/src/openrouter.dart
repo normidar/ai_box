@@ -8,12 +8,12 @@ import 'package:openrouter_box/src/models/openrouter_model.dart';
 ///
 /// OpenRouter は OpenAI 互換の単一エンドポイントから、OpenAI・Anthropic・
 /// Google・Meta など多数のモデルへアクセスできるルーターサービス。
-/// モデル ID は `openai/gpt-4o-mini` のように `provider/model` 形式で指定する。
+/// モデル ID は `openai/gpt-5.4-mini` のように `provider/model` 形式で指定する。
 ///
 /// ```dart
 /// final ai = OpenRouter(apiKey: 'sk-or-...');
 /// final answer = await ai.generateText(
-///   model: 'openai/gpt-4o-mini',
+///   model: 'openai/gpt-5.4-mini',
 ///   message: 'こんにちは',
 /// );
 /// ```

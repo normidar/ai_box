@@ -18,14 +18,14 @@ Future<void> main() async {
 
   // One-shot text generation.
   final answer = await ai.generateText(
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.4-mini',
     message: 'Say hello in one short sentence.',
   );
   print(answer);
 
   // Multi-turn chat.
   final res = await ai.chat(
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.4-mini',
     messages: [
       LLMContent.system('You are concise.'),
       LLMContent.user('What is the capital of Japan?'),
@@ -44,7 +44,7 @@ the finish reason and token usage:
 
 ```dart
 await for (final text in ai.generateTextStream(
-  model: 'gpt-4o-mini',
+  model: 'gpt-5.4-mini',
   message: 'Write a haiku about Dart.',
 )) {
   stdout.write(text);

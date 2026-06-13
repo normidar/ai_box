@@ -18,14 +18,14 @@ Future<void> main() async {
 
   // One-shot text generation.
   final answer = await ai.generateText(
-    model: 'grok-3',
+    model: 'grok-4.3',
     message: 'Say hello in one short sentence.',
   );
   print(answer);
 
   // Multi-turn chat.
   final res = await ai.chat(
-    model: 'grok-3',
+    model: 'grok-4.3',
     messages: [
       LLMContent.system('You are concise.'),
       LLMContent.user('What is the capital of Japan?'),
@@ -44,7 +44,7 @@ the finish reason:
 
 ```dart
 await for (final text in ai.generateTextStream(
-  model: 'grok-3',
+  model: 'grok-4.3',
   message: 'Write a haiku about Dart.',
 )) {
   stdout.write(text);

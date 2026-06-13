@@ -1,117 +1,113 @@
-# Gemini Box
+# gemini_box
 
-## Overview
+[![GitHub](https://img.shields.io/github/license/normidar/ai_box.svg)](https://github.com/normidar/ai_box/blob/main/LICENSE)
+[![pub package](https://img.shields.io/pub/v/gemini_box.svg)](https://pub.dev/packages/gemini_box)
+[![GitHub Stars](https://img.shields.io/github/stars/normidar/ai_box.svg)](https://github.com/normidar/ai_box/stargazers)
+[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/normidar)
 
-Gemini Box is a wrapper library for easily using the Gemini API, Google Cloud Platform (GCP)'s Generative AI API, in Dart. This package is used within the Coin Galaxy project and enables efficient communication with Gemini AI models.
-
-## Features
-
-- Support for the latest Gemini AI models (Gemini 1.0, 1.5, 2.0, 2.5, etc.)
-- Text generation, image understanding, embedding generation, and other capabilities
-- File upload and file management support
-- Compatible with various Gemini model versions
-- Flexible request configuration options
+A Google Gemini provider based on [ai_box](https://github.com/normidar/ai_box).
 
 ## Usage
 
 ```dart
+import 'package:ai_box/ai_box.dart';
 import 'package:gemini_box/gemini_box.dart';
 
-void main() async {
-  // Initialize Gemini instance with API key
-  final gemini = Gemini(apiKey: 'YOUR_API_KEY');
+Future<void> main() async {
+  final ai = Gemini(apiKey: 'YOUR_API_KEY');
 
-  // Create request
-  final requestBody = RequestBody(
+  // One-shot text generation.
+  final answer = await ai.generateText(
+    model: 'gemini-3.5-flash',
+    message: 'Say hello in one short sentence.',
+  );
+  print(answer);
+
+  // Multi-turn chat.
+  final res = await ai.chat(
+    model: 'gemini-3.5-flash',
+    messages: [
+      LLMContent.system('You are concise.'),
+      LLMContent.user('What is the capital of Japan?'),
+    ],
+    maxTokens: 32,
+  );
+  print(res.text);
+  print(res.usage); // token usage
+}
+```
+
+## Streaming
+
+True SSE streaming — text arrives incrementally and the final chunk carries
+the finish reason and token usage:
+
+```dart
+await for (final text in ai.generateTextStream(
+  model: 'gemini-3.5-flash',
+  message: 'Write a haiku about Dart.',
+)) {
+  stdout.write(text);
+}
+```
+
+## Working with images
+
+Pass images as `LLMContentPart`s on any message — `ai_box` converts them to
+Gemini `inlineData` / `fileData` automatically:
+
+```dart
+final res = await ai.chat(
+  model: 'gemini-3.5-flash',
+  messages: [
+    LLMContent.user('Please describe this image.', attachments: [
+      LLMImagePart.bytes(jpegBytes, mimeType: 'image/jpeg'),
+    ]),
+  ],
+);
+print(res.text);
+```
+
+## Low-level typed API
+
+For full control over the request body, use `generateContent` with the typed
+request/response classes:
+
+```dart
+final response = await ai.generateContent(
+  model: 'gemini-3.5-flash',
+  requestBody: RequestBody(
     contents: [
-      Content(
-        parts: [
-          Part(text: 'Hello, Gemini!'),
-        ],
-      ),
+      Content(parts: [Part(text: 'Hello, Gemini!')]),
     ],
     generationConfig: GenerationConfig(
       temperature: 0.7,
       maxOutputTokens: 1000,
     ),
-  );
-
-  // Generate content
-  final response = await gemini.generateContent(
-    model: GeminiVersions.gemini15Pro.version,
-    requestBody: requestBody,
-  );
-
-  // Handle response
-  print(response.candidates?.first.content?.parts?.first);
-}
+  ),
+);
+print(response.candidates?.first.content?.parts?.first);
 ```
 
-## Working with Images
+## Files API
+
+Upload and manage files via `ai.files` (the Gemini Files API):
 
 ```dart
-import 'dart:convert';
-import 'dart:io';
-import 'package:gemini_box/gemini_box.dart';
-
-void main() async {
-  // Load image file
-  final imageFile = File('path/to/image.jpg');
-  final imageBytes = await imageFile.readAsBytes();
-  final base64Image = base64Encode(imageBytes);
-
-  // Initialize Gemini instance
-  final gemini = Gemini(apiKey: 'YOUR_API_KEY');
-
-  // Generate content with inline image
-  final response = await gemini.generateContent(
-    model: GeminiVersions.gemini20FlashLite.version,
-    requestBody: RequestBody(
-      contents: [
-        Content(
-          parts: [
-            Part(inlineData: Blob(
-              mimeType: 'image/jpeg',
-              data: base64Image,
-            )),
-            Part(text: 'Please describe this image.'),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  // Display result
-  print(response.candidates?.first.content?.parts?.first);
-}
+final file = await ai.files.uploadFile(file: File('path/to/image.jpg'));
+final files = await ai.files.getFiles();
 ```
 
-## Supported Models
+## Models and key validation
 
-This library supports numerous Gemini model versions, including:
-
-- Gemini 1.0 Pro Vision
-- Gemini 1.5 Pro
-- Gemini 1.5 Flash
-- Gemini 2.0 Flash
-- Gemini 2.5 Flash Preview
-- And many others
-
-## Installation
-
-Add the dependency to your `pubspec.yaml` file:
-
-```yaml
-dependencies:
-  gemini_box: ^1.0.0
+```dart
+final models = await ai.getModels(); // live model list from the API
+final ok = await ai.validateKey();
 ```
 
-Then install the package:
+Pass any model ID the API serves (see `getModels()`), e.g.
+`gemini-3.5-flash` or other current Gemini 3.x models.
 
-```bash
-dart pub get
-```
-
-## License
-
-This project is provided under the MIT License.
+Multimodal input (images, files), tool calling, structured output and the
+sealed `LLMException` error hierarchy are all provided by
+[ai_box](https://pub.dev/packages/ai_box) — see its README for details.
