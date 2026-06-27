@@ -1,6 +1,6 @@
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:mistral_box/mistral_box.dart';
-import 'package:mistral_box/src/openai_compat.dart';
 
 class Mistral extends LLMAIBase {
   Mistral({required super.apiKey});
@@ -20,6 +20,20 @@ class Mistral extends LLMAIBase {
       body: body,
     );
     return parseOpenAiResponse(data);
+  }
+
+  /// 真の SSE ストリーミング。テキストは増分で流れ、最終チャンクに
+  /// 完全なパーツ・完了理由・トークン使用量が入る。
+  @override
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
+    return streamOpenAiCompletions(
+      url: _url,
+      apiKey: apiKey,
+      provider: _provider,
+      request: request,
+      maxTokensKey: 'max_tokens',
+      includeUsage: true,
+    );
   }
 
   @override

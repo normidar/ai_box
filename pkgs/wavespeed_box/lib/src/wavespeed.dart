@@ -1,5 +1,5 @@
 import 'package:ai_box/ai_box.dart';
-import 'package:wavespeed_box/src/openai_compat.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:wavespeed_box/wavespeed_box.dart';
 
 class WaveSpeed extends LLMAIBase {
@@ -20,6 +20,20 @@ class WaveSpeed extends LLMAIBase {
       body: body,
     );
     return parseOpenAiResponse(data);
+  }
+
+  /// 真の SSE ストリーミング。テキストは増分で流れ、最終チャンクに
+  /// 完全なパーツ・完了理由・トークン使用量が入る。
+  @override
+  Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
+    return streamOpenAiCompletions(
+      url: _url,
+      apiKey: apiKey,
+      provider: _provider,
+      request: request,
+      maxTokensKey: 'max_tokens',
+      includeUsage: true,
+    );
   }
 
   @override

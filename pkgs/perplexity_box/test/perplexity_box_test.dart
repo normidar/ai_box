@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:perplexity_box/perplexity_box.dart';
-import 'package:perplexity_box/src/openai_compat.dart';
 import 'package:test/test.dart';
 
 void main() {
