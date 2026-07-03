@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ai_box/ai_box.dart';
+import 'package:ai_box/openai_compat.dart';
 import 'package:test/test.dart';
-import 'package:wavespeed_box/src/openai_compat.dart';
 import 'package:wavespeed_box/wavespeed_box.dart';
 
 void main() {
