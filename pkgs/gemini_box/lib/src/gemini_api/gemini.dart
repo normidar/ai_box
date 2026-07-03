@@ -30,9 +30,9 @@ class Gemini extends LLMAIBase {
     final data = postSseData(
       url: '$_baseUrl/models/${request.model}:streamGenerateContent',
       provider: GeminiCore.provider,
-      headers: const {},
+      headers: {'x-goog-api-key': apiKey},
       body: _buildGeminiBody(request),
-      queryParameters: {'key': apiKey, 'alt': 'sse'},
+      queryParameters: {'alt': 'sse'},
     );
     return geminiChunksFromEvents(decodeSseJson(data));
   }
@@ -297,7 +297,8 @@ Future<Map<String, dynamic>> _postGemini({
     () => ac.Api.post(
       requestAcc: ac.PostRequestAcc(
         url: '$_baseUrl/models/$model:generateContent',
-        queryParameters: {'key': apiKey},
+        // API キーは URL（ログ・プロキシに残る）ではなくヘッダーで送る。
+        headers: ac.RestHeaders({'x-goog-api-key': apiKey}),
         body: ac.JsonRequestBody(body),
       ),
     ),
