@@ -173,4 +173,70 @@ void main() {
       expect(t.mode, LLMToolChoiceMode.any);
     });
   });
+
+  group('LLMAIBase.chat / chatStream', () {
+    test('chat passes sampling parameters through to the request', () async {
+      final ai = _RecordingAI();
+      await ai.chat(
+        model: 'm',
+        messages: [LLMContent.user('hi')],
+        maxTokens: 100,
+        temperature: 0.5,
+        topP: 0.9,
+        stop: ['END'],
+        seed: 42,
+        frequencyPenalty: 0.1,
+        presencePenalty: -0.2,
+      );
+      final req = ai.lastRequest!;
+      expect(req.maxTokens, 100);
+      expect(req.temperature, 0.5);
+      expect(req.topP, 0.9);
+      expect(req.stop, ['END']);
+      expect(req.seed, 42);
+      expect(req.frequencyPenalty, 0.1);
+      expect(req.presencePenalty, -0.2);
+    });
+
+    test('chatStream passes sampling parameters through to the request',
+        () async {
+      final ai = _RecordingAI();
+      await ai
+          .chatStream(
+            model: 'm',
+            messages: [LLMContent.user('hi')],
+            temperature: 0.7,
+            seed: 7,
+          )
+          .drain<void>();
+      final req = ai.lastRequest!;
+      expect(req.temperature, 0.7);
+      expect(req.seed, 7);
+    });
+  });
+}
+
+/// 受け取った [LLMCompletionRequest] を記録するだけのテスト用プロバイダー。
+class _RecordingAI extends LLMAIBase {
+  _RecordingAI() : super(apiKey: 'test');
+
+  LLMCompletionRequest? lastRequest;
+
+  @override
+  Future<LLMCompletionResponse> completions(
+    LLMCompletionRequest request,
+  ) async {
+    lastRequest = request;
+    return LLMCompletionResponse(
+      content: LLMContent(role: LLMRole.model, parts: [LLMTextPart('ok')]),
+      usage: const LLMUsage(inputTokens: 0, outputTokens: 0),
+      finishReason: LLMFinishReason.stop,
+    );
+  }
+
+  @override
+  Future<List<AIModel>> getModels() async => const [];
+
+  @override
+  Future<bool> validateKey() async => true;
 }

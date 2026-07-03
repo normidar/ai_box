@@ -13,9 +13,8 @@ class GeminiFilesCore {
   }) async {
     final requestAcc = ac.GetRequestAcc(
       url: 'https://generativelanguage.googleapis.com/v1beta/files',
-      queryParameters: {
-        'key': apiKey,
-      },
+      // API キーは URL（ログ・プロキシに残る）ではなくヘッダーで送る。
+      headers: ac.RestHeaders({'x-goog-api-key': apiKey}),
     );
 
     final response = await ac.Api.get(requestAcc: requestAcc);
@@ -56,6 +55,8 @@ class GeminiFilesCore {
   }) async {
     // ヘッダーを作成
     final customHeaders = <String, String>{
+      // API キーは URL（ログ・プロキシに残る）ではなくヘッダーで送る。
+      'x-goog-api-key': apiKey,
       'X-Goog-Upload-Protocol': 'resumable',
       'X-Goog-Upload-Command': 'start',
       'X-Goog-Upload-Header-Content-Length': contentLength.toString(),
@@ -65,9 +66,6 @@ class GeminiFilesCore {
     final requestAcc = ac.PostRequestAcc(
       url: 'https://generativelanguage.googleapis.com/upload/v1beta/files',
       headers: ac.RestHeaders(customHeaders),
-      queryParameters: {
-        'key': apiKey,
-      },
       body: ac.JsonRequestBody(
         {
           'file': {

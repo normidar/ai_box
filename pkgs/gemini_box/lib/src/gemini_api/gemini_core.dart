@@ -17,9 +17,8 @@ class GeminiCore {
       () => ac.Api.post(
         requestAcc: ac.PostRequestAcc(
           url: '$_baseUrl/models/$model:generateContent',
-          queryParameters: {
-            'key': apiKey,
-          },
+          // API キーは URL（ログ・プロキシに残る）ではなくヘッダーで送る。
+          headers: ac.RestHeaders({'x-goog-api-key': apiKey}),
           body: ac.JsonRequestBody(requestBody.toJson()),
         ),
       ),
@@ -35,8 +34,8 @@ class GeminiCore {
       () => ac.Api.get(
         requestAcc: ac.GetRequestAcc(
           url: '$_baseUrl/models',
-          queryParameters: {
-            'key': apiKey,
+          headers: ac.RestHeaders({'x-goog-api-key': apiKey}),
+          queryParameters: const {
             'pageSize': '1000',
           },
         ),
