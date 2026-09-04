@@ -7,6 +7,11 @@ help:
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}';
 	@echo "";
 
+# The toolchain is pinned in mise.toml; `mise install` picks it up.
+.PHONY: setup
+setup: ## Install the pinned toolchain
+	mise install
+
 # ci
 .PHONY: ci
 ci: build_all analyze_all test_all format melos_generate
@@ -17,7 +22,7 @@ analyze_all: ## Analyze all apps with Flutter
 	@for dir in pkgs/*/; do \
 		if [ -d "$$dir" ]; then \
 			echo "Analyzing $$dir..."; \
-			(cd "$$dir" && fvm dart analyze .) || exit 1; \
+			(cd "$$dir" && dart analyze .) || exit 1; \
 		fi \
 	done
 
@@ -27,34 +32,34 @@ test_all: ## Run tests for all packages that have a test directory
 	@for dir in pkgs/*/; do \
 		if [ -d "$$dir/test" ]; then \
 			echo "Testing $$dir..."; \
-			(cd "$$dir" && fvm dart test) || exit 1; \
+			(cd "$$dir" && dart test) || exit 1; \
 		fi \
 	done
 
 # format
 .PHONY: format
 format: ## Format all code
-	fvm dart format .
+	dart format .
 	npx prettier --write "**/*.md"
 
 # run build
 .PHONY: build_all
-build_all: ## Same functionality as `fvm dart run build_runner build` (made available at root level) Usage: `make build_all`
+build_all: ## Same functionality as `dart run build_runner build` (made available at root level) Usage: `make build_all`
 	@for dir in pkgs/*/; do \
 		if [ -d "$$dir" ]; then \
 			echo "Building $$dir..."; \
-			(cd "$$dir" && fvm dart run build_runner build --delete-conflicting-outputs) || exit 1; \
+			(cd "$$dir" && dart run build_runner build --delete-conflicting-outputs) || exit 1; \
 		fi \
 	done
 
 # add_freezed: https://pub.dev/packages/freezed#install
 .PHONY: add_freezed
 add_freezed: ## Add freezed to package: `make add_freezed`
-	fvm dart pub add freezed_annotation && \
-	fvm dart pub add dev:build_runner && \
-	fvm dart pub add dev:freezed && \
-	fvm dart pub add json_annotation && \
-	fvm dart pub add dev:json_serializable; \
+	dart pub add freezed_annotation && \
+	dart pub add dev:build_runner && \
+	dart pub add dev:freezed && \
+	dart pub add json_annotation && \
+	dart pub add dev:json_serializable; \
 
 # git branch clean
 .PHONY: git_branch_clean
@@ -79,11 +84,11 @@ git_my_tasks: ## Display my tasks: `make git_my_tasks`
 
 .PHONY: pub_get
 pub_get: ## Run pub get for all packages: `make pub_get`
-	fvm dart pub get
+	dart pub get
 	@for dir in pkgs/*/; do \
 		if [ -f "$$dir/pubspec.yaml" ]; then \
 			echo "Running pub get in $$dir..."; \
-			(cd "$$dir" && fvm dart pub get); \
+			(cd "$$dir" && dart pub get); \
 		fi \
 	done
 
@@ -93,7 +98,7 @@ pub_publish_dry_run: ## Dry run for pub publish: `make pub_publish_dry_run`
 		echo "\033[0;31mPlease provide a package name."; \
 	else \
 		(cd $(filter-out $@,$(MAKECMDGOALS)) && \
-		fvm dart pub publish --dry-run); \
+		dart pub publish --dry-run); \
 	fi
 
 .PHONY: pub_publish
@@ -102,7 +107,7 @@ pub_publish: ## Publish to pub.dev: `make pub_publish`
 		echo "\033[0;31mPlease provide a package name."; \
 	else \
 		(cd $(filter-out $@,$(MAKECMDGOALS)) && \
-		fvm dart pub publish); \
+		dart pub publish); \
 	fi
 
 .PHONY: add_dependency
@@ -110,7 +115,7 @@ add_dependency: ## Add a dependency to the package: `make add_dependency <depend
 	if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "\033[0;31mPlease provide a dependency name."; \
 	else \
-		fvm dart pub add $(filter-out $@,$(MAKECMDGOALS)); \
+		dart pub add $(filter-out $@,$(MAKECMDGOALS)); \
 	fi
 
 .PHONY: rename
@@ -134,8 +139,8 @@ rename: ## Rename in all files from dart_pkg_group_temp to <new_name>: `make ren
 
 .PHONY: melos_generate
 melos_generate: ## Generate melos.yaml: `make melos_generate`
-	fvm dart run melos bootstrap && \
-	fvm dart run melos  list --gviz > gviz.dot \
+	dart run melos bootstrap && \
+	dart run melos  list --gviz > gviz.dot \
 
 %:
 	@:

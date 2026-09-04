@@ -1,5 +1,7 @@
 # ai_box
 
+Version: V1
+
 [![GitHub](https://img.shields.io/github/license/normidar/ai_box.svg)](https://github.com/normidar/ai_box/blob/main/LICENSE)
 [![pub package](https://img.shields.io/pub/v/ai_box.svg)](https://pub.dartlang.org/packages/ai_box)
 [![GitHub Stars](https://img.shields.io/github/stars/normidar/ai_box.svg)](https://github.com/normidar/ai_box/stargazers)

@@ -14,19 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: Cache fvm
-        uses: actions/cache@v5
+      - name: Set up toolchain (mise)
+        uses: jdx/mise-action@v2
         with:
-          path: /opt/hostedtoolcache/flutter
-          key: ${{ runner.OS }}-${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-
-      - name: Install fvm
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          install: true
+          cache: true
 
       - name: Dart version
         run: |
