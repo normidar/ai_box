@@ -15,7 +15,15 @@ import 'package:claude_box/src/freezed/models/request_header/request_header.dart
 /// （`seed` / `frequencyPenalty` / `presencePenalty` / `responseFormat`）は
 /// 送信されず無視される。
 class Claude extends LLMAIBase {
-  Claude({required super.apiKey});
+  Claude({required super.apiKey, this.promptCaching = false});
+
+  /// プロンプトキャッシュ（`cache_control`）を付けるか。
+  ///
+  /// true なら、ツール定義 + system の末尾と会話の最後のブロックに
+  /// キャッシュの区切りを置く。毎回同じツール定義・system を送る
+  /// エージェントループで、2 回目以降の入力が割引価格で読まれる
+  /// （書き込みは通常より少し高い。短すぎる prompt は API 側で無視される）。
+  final bool promptCaching;
 
   /// Claude API は max_tokens が必須のため、未指定時に使うデフォルト値。
   static const int defaultMaxTokens = 8000;
@@ -32,7 +40,7 @@ class Claude extends LLMAIBase {
     final data = await _postClaude(
       apiKey: apiKey,
       version: _version,
-      body: _buildClaudeBody(request),
+      body: buildClaudeBody(request, promptCaching: promptCaching),
     );
     return _parseClaudeResponse(data);
   }
@@ -41,7 +49,7 @@ class Claude extends LLMAIBase {
   /// 完全なパーツ・完了理由・トークン使用量が入る。
   @override
   Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
-    final body = _buildClaudeBody(request);
+    final body = buildClaudeBody(request, promptCaching: promptCaching);
     body['stream'] = true;
     final data = postSseData(
       url: _messagesUrl,
@@ -111,7 +119,16 @@ class Claude extends LLMAIBase {
 
 const _messagesUrl = 'https://api.anthropic.com/v1/messages';
 
-Map<String, dynamic> _buildClaudeBody(LLMCompletionRequest request) {
+/// [request] を Messages API のリクエストボディにする。
+///
+/// [promptCaching] なら `cache_control` の区切りを 2 か所に置く: system の
+/// 末尾（無ければ最後のツール定義。どちらもツール定義 → system の順の前置き
+/// 部分をまとめてキャッシュする）と、会話の最後のブロック（前のラウンドまでの
+/// 会話を次のラウンドで読めるようにする）。
+Map<String, dynamic> buildClaudeBody(
+  LLMCompletionRequest request, {
+  bool promptCaching = false,
+}) {
   // Claude では system ロールのメッセージを system フィールドに分離する。
   final system = request.messages
       .where((e) => e.role == LLMRole.system)
@@ -125,14 +142,19 @@ Map<String, dynamic> _buildClaudeBody(LLMCompletionRequest request) {
     'model': request.model,
     'messages': _toClaudeMessages(convo),
     'max_tokens': request.maxTokens ?? Claude.defaultMaxTokens,
-    if (system.isNotEmpty) 'system': system,
+    if (system.isNotEmpty)
+      'system': promptCaching
+          ? [
+              {'type': 'text', 'text': system, 'cache_control': _ephemeral},
+            ]
+          : system,
     if (request.temperature != null) 'temperature': request.temperature,
     if (request.topP != null) 'top_p': request.topP,
     if (request.stop != null) 'stop_sequences': request.stop,
   };
   final tools = request.tools;
   if (tools != null && tools.isNotEmpty) {
-    body['tools'] = [
+    body['tools'] = <Map<String, dynamic>>[
       for (final t in tools)
         {
           'name': t.name,
@@ -142,9 +164,22 @@ Map<String, dynamic> _buildClaudeBody(LLMCompletionRequest request) {
     ];
     final tc = _toClaudeToolChoice(request.toolChoice);
     if (tc != null) body['tool_choice'] = tc;
+    if (promptCaching && system.isEmpty) {
+      final defs = body['tools'] as List<Map<String, dynamic>>;
+      defs.last['cache_control'] = _ephemeral;
+    }
+  }
+  if (promptCaching) {
+    final messages = body['messages'] as List<Map<String, dynamic>>;
+    if (messages.isNotEmpty) {
+      final blocks = messages.last['content'] as List<Map<String, dynamic>>;
+      blocks.last['cache_control'] = _ephemeral;
+    }
   }
   return body;
 }
+
+const _ephemeral = {'type': 'ephemeral'};
 
 List<Map<String, dynamic>> _toClaudeMessages(List<LLMContent> messages) {
   final out = <Map<String, dynamic>>[];

@@ -1,3 +1,11 @@
+## 0.1.5
+
+- `Claude(promptCaching: true)` adds `cache_control` breakpoints (after the
+  tool definitions + system prompt, and on the last message block) so agent
+  loops that resend the same tools every round read them from the prompt
+  cache. Off by default.
+- `buildClaudeBody()` (the Messages API request body builder) is now public.
+
 ## 0.1.4
 
 - `easyTalk()` now uses `claude-sonnet-4-6` instead of
