@@ -10,6 +10,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:ai_box/ai_box.dart';
 import 'package:ai_box/provider_http.dart';
@@ -489,4 +490,166 @@ LLMException _streamErrorToException(
     code: (error['type'] ?? error['code'])?.toString(),
     raw: raw,
   );
+}
+
+// ---------------------------------------------------------------------------
+// 画像生成・埋め込み（OpenAI 形式の `/images/generations` / `/embeddings`）
+// ---------------------------------------------------------------------------
+
+/// OpenAI 形式の画像生成リクエストのボディ。
+///
+/// [b64ResponseFormat] は `response_format: b64_json` を送るか（DALL·E と
+/// xAI は既定が URL のため。gpt-image は常に base64 で、この指定を拒否する）。
+/// [sendSize] / [sendAspectRatio] で、プロバイダーが受け付けるものだけを送る。
+Map<String, dynamic> buildOpenAiImageBody(
+  ImageGenerationRequest request, {
+  bool b64ResponseFormat = false,
+  bool sendSize = true,
+  bool sendAspectRatio = false,
+}) {
+  final size = request.size;
+  final aspectRatio = request.aspectRatio;
+  return {
+    'model': request.model,
+    'prompt': request.prompt,
+    if (request.n != 1) 'n': request.n,
+    if (sendSize && size != null) 'size': size,
+    if (sendAspectRatio && aspectRatio != null) 'aspect_ratio': aspectRatio,
+    if (b64ResponseFormat) 'response_format': 'b64_json',
+  };
+}
+
+/// OpenAI 形式の画像生成レスポンス（`data[].b64_json` / `data[].url`）を
+/// [ImageGenerationResponse] に変換する。
+///
+/// `media_type`（OpenRouter）が無ければ [defaultMimeType]。`usage` は
+/// `input_tokens` / `output_tokens`（OpenAI）か `prompt_tokens` /
+/// `completion_tokens`、費用は `usage.cost`（OpenRouter）。
+ImageGenerationResponse parseOpenAiImageResponse(
+  Map<String, dynamic> data, {
+  String defaultMimeType = 'image/png',
+}) {
+  final images = <LLMImagePart>[];
+  String? revised;
+  for (final item in (data['data'] as List?) ?? const []) {
+    if (item is! Map<String, dynamic>) continue;
+    final b64 = item['b64_json'];
+    final url = item['url'];
+    if (b64 is String && b64.isNotEmpty) {
+      images.add(
+        LLMImagePart.bytes(
+          base64Decode(b64),
+          mimeType: (item['media_type'] as String?) ?? defaultMimeType,
+        ),
+      );
+    } else if (url is String && url.isNotEmpty) {
+      images.add(LLMImagePart.dataUri(url));
+    }
+    revised ??= item['revised_prompt'] as String?;
+  }
+  final usage = data['usage'];
+  final usageMap = usage is Map<String, dynamic> ? usage : null;
+  return ImageGenerationResponse(
+    images: images,
+    usage: usageMap == null ? null : _parseGenerationUsage(usageMap),
+    costUsd: (usageMap?['cost'] as num?)?.toDouble(),
+    revisedPrompt: revised,
+  );
+}
+
+LLMUsage _parseGenerationUsage(Map<String, dynamic> usage) => LLMUsage(
+      inputTokens: ((usage['input_tokens'] ?? usage['prompt_tokens']) as num?)
+              ?.toInt() ??
+          0,
+      outputTokens:
+          ((usage['output_tokens'] ?? usage['completion_tokens']) as num?)
+                  ?.toInt() ??
+              0,
+    );
+
+/// OpenAI 形式の埋め込みリクエストのボディ（`encoding_format: float`）。
+Map<String, dynamic> buildOpenAiEmbeddingBody(EmbeddingRequest request) => {
+      'model': request.model,
+      'input': request.inputs,
+      'encoding_format': 'float',
+      if (request.dimensions != null) 'dimensions': request.dimensions,
+    };
+
+/// OpenAI 形式の埋め込みレスポンス（`data[].embedding`、`index` 順に並べ直す）を
+/// [EmbeddingResponse] に変換する。数が入力と合わなければ [LLMUnknownException]。
+EmbeddingResponse parseOpenAiEmbeddingResponse(
+  Map<String, dynamic> data, {
+  required int expectedCount,
+  required String provider,
+}) {
+  final items = [
+    for (final item in (data['data'] as List?) ?? const [])
+      if (item is Map<String, dynamic> && item['embedding'] is List) item,
+  ];
+  if (items.length != expectedCount) {
+    throw LLMUnknownException(
+      'Expected $expectedCount embeddings from $provider, got ${items.length}',
+      provider: provider,
+      raw: data,
+    );
+  }
+  items.sort(
+    (a, b) => ((a['index'] as num?) ?? 0).compareTo((b['index'] as num?) ?? 0),
+  );
+  final usage = data['usage'];
+  final usageMap = usage is Map<String, dynamic> ? usage : null;
+  return EmbeddingResponse(
+    vectors: [
+      for (final item in items)
+        Float32List.fromList([
+          for (final v in item['embedding'] as List) (v as num).toDouble(),
+        ]),
+    ],
+    inputTokens:
+        ((usageMap?['prompt_tokens'] ?? usageMap?['total_tokens']) as num?)
+            ?.toInt(),
+    costUsd: (usageMap?['cost'] as num?)?.toDouble(),
+  );
+}
+
+/// OpenAI 互換 API に GET し、JSON ボディを返す（モデル一覧など）。
+Future<Map<String, dynamic>> getOpenAiJson({
+  required String url,
+  required String apiKey,
+  required String provider,
+  Map<String, String> extraHeaders = const {},
+}) {
+  return requestJson(
+    provider: provider,
+    send: () => Api.get(
+      requestAcc: GetRequestAcc(
+        url: url,
+        headers: RestHeaders({
+          if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey',
+          ...extraHeaders,
+        }),
+      ),
+    ),
+  );
+}
+
+/// モデル一覧のレスポンス（`data[]` か `models[]` の `id` / `name` /
+/// `created` / `context_length`）を [AIModel] のリストにする。
+List<AIModel> parseModelList(Map<String, dynamic> data) {
+  final items = (data['data'] ?? data['models']) as List? ?? const [];
+  return [
+    for (final item in items)
+      if (item is Map<String, dynamic> && item['id'] is String)
+        AIModel(
+          id: item['id'] as String,
+          name: item['name'] as String?,
+          description: item['description'] as String?,
+          created: (item['created'] as num?) == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(
+                  (item['created'] as num).toInt() * 1000,
+                ),
+          contextLength: (item['context_length'] as num?)?.toInt(),
+        ),
+  ];
 }

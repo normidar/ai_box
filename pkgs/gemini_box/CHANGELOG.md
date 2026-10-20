@@ -1,3 +1,10 @@
+## 0.0.5
+
+- `Gemini` now implements `ImageGenerator` (`generateContent` with image output)
+  and `TextEmbedder` (`batchEmbedContents`, with task type and output
+  dimensionality).
+- Optional `baseUrl` for tests.
+
 ## 0.0.4
 
 - `completionsStream()` now uses real SSE streaming via

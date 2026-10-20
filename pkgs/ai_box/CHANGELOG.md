@@ -1,3 +1,12 @@
+## 0.3.1
+
+- Added `ImageGenerator` (image generation: `generateImage`, `getImageModels`) and
+  `TextEmbedder` (text embeddings: `embedBatch`, `getEmbeddingModels`, and `embed`,
+  which splits large inputs into `maxEmbeddingBatch`-sized requests) mixins with
+  their request / response types.
+- `openai_compat.dart`: OpenAI-format image / embedding body builders and
+  parsers, `getOpenAiJson`, and `parseModelList`.
+
 ## 0.3.0
 
 - Add true SSE streaming support:

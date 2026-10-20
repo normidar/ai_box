@@ -20,11 +20,23 @@ import 'package:openrouter_box/src/models/openrouter_model.dart';
 ///
 /// [referer] / [title] を渡すと、OpenRouter のランキング用ヘッダ
 /// （`HTTP-Referer` / `X-Title`）が付与される（任意）。
-class OpenRouter extends LLMAIBase {
-  OpenRouter({required super.apiKey, this.referer, this.title});
+///
+/// 画像生成（`/images`）とテキスト埋め込み（`/embeddings`）にも対応する。
+class OpenRouter extends LLMAIBase with ImageGenerator, TextEmbedder {
+  OpenRouter({
+    required super.apiKey,
+    this.referer,
+    this.title,
+    this.baseUrl = OpenRouterCore.baseUrl,
+  });
 
-  static const _url = '${OpenRouterCore.baseUrl}/chat/completions';
   static const _provider = 'openrouter';
+
+  /// API のベース URL（テストで差し替える）。[getModels] などの一覧は常に
+  /// OpenRouter へ問い合わせる。
+  final String baseUrl;
+
+  String get _url => '$baseUrl/chat/completions';
 
   /// ランキング用の参照元 URL（`HTTP-Referer`、任意）。
   final String? referer;
@@ -79,6 +91,63 @@ class OpenRouter extends LLMAIBase {
   Future<OpenRouterKeyInfo> getKeyInfo() {
     return OpenRouterCore.getKeyInfo(apiKey: apiKey);
   }
+
+  /// 画像生成（`/images`。base64 と `media_type` で返り、`usage.cost` に費用）。
+  @override
+  Future<ImageGenerationResponse> generateImage(
+    ImageGenerationRequest request,
+  ) async {
+    final data = await postOpenAiJson(
+      url: '$baseUrl/images',
+      apiKey: apiKey,
+      provider: _provider,
+      body: buildOpenAiImageBody(request, sendAspectRatio: true),
+      extraHeaders: _rankingHeaders(),
+    );
+    return parseOpenAiImageResponse(data);
+  }
+
+  /// 画像生成モデルの一覧（`/images/models`）。
+  @override
+  Future<List<AIModel>> getImageModels() async => parseModelList(
+    await getOpenAiJson(
+      url: '${OpenRouterCore.baseUrl}/images/models',
+      apiKey: apiKey,
+      provider: _provider,
+    ),
+  );
+
+  /// 1 回のリクエストで送る入力の上限（OpenRouter は明記していないため、
+  /// 中継先の上限が小さいモデルでも通るよう控えめにする）。
+  @override
+  int get maxEmbeddingBatch => 100;
+
+  /// テキスト埋め込み（`/embeddings`、`usage.cost` に費用）。
+  @override
+  Future<EmbeddingResponse> embedBatch(EmbeddingRequest request) async {
+    final data = await postOpenAiJson(
+      url: '$baseUrl/embeddings',
+      apiKey: apiKey,
+      provider: _provider,
+      body: buildOpenAiEmbeddingBody(request),
+      extraHeaders: _rankingHeaders(),
+    );
+    return parseOpenAiEmbeddingResponse(
+      data,
+      expectedCount: request.inputs.length,
+      provider: _provider,
+    );
+  }
+
+  /// 埋め込みモデルの一覧（`/embeddings/models`）。
+  @override
+  Future<List<AIModel>> getEmbeddingModels() async => parseModelList(
+    await getOpenAiJson(
+      url: '${OpenRouterCore.baseUrl}/embeddings/models',
+      apiKey: apiKey,
+      provider: _provider,
+    ),
+  );
 
   @override
   Future<bool> validateKey() async {

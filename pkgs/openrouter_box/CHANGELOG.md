@@ -1,3 +1,10 @@
+## 0.0.5
+
+- `OpenRouter` now implements `ImageGenerator` (`/images`, `/images/models`) and
+  `TextEmbedder` (`/embeddings`, `/embeddings/models`); reported `usage.cost` is
+  exposed as `costUsd`.
+- Optional `baseUrl` for tests.
+
 ## 0.0.4
 
 - `completionsStream()` now uses real SSE streaming (incremental text /

@@ -1,3 +1,9 @@
+## 0.0.6
+
+- `ChatGPT` now implements `ImageGenerator` (`/v1/images/generations`) and
+  `TextEmbedder` (`/v1/embeddings`).
+- Optional `baseUrl` for OpenAI-compatible servers and tests.
+
 ## 0.0.5
 
 - `completionsStream()` now uses real SSE streaming (incremental text /

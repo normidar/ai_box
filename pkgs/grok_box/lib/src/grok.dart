@@ -2,11 +2,19 @@ import 'package:ai_box/ai_box.dart';
 import 'package:ai_box/openai_compat.dart';
 import 'package:grok_box/grok_box.dart';
 
-class Grok extends LLMAIBase {
-  Grok({required super.apiKey});
+/// xAI Grok プロバイダー（チャット・画像生成。埋め込み API は無い）。
+class Grok extends LLMAIBase with ImageGenerator {
+  Grok({required super.apiKey, this.baseUrl = defaultBaseUrl});
 
-  static const _url = 'https://api.x.ai/v1/chat/completions';
+  /// xAI API の既定のベース URL。
+  static const defaultBaseUrl = 'https://api.x.ai/v1';
   static const _provider = 'grok';
+
+  /// API のベース URL（テストで差し替える）。モデル一覧・キー情報は常に
+  /// xAI へ問い合わせる。
+  final String baseUrl;
+
+  String get _url => '$baseUrl/chat/completions';
 
   @override
   Future<LLMCompletionResponse> completions(
@@ -46,6 +54,48 @@ class Grok extends LLMAIBase {
           ),
         )
         .toList();
+  }
+
+  /// 画像生成（`/v1/images/generations`）。既定は URL で返るので base64 を
+  /// 求める（xAI の画像は JPEG）。大きさは `size` ではなく `aspect_ratio`。
+  @override
+  Future<ImageGenerationResponse> generateImage(
+    ImageGenerationRequest request,
+  ) async {
+    final data = await postOpenAiJson(
+      url: '$baseUrl/images/generations',
+      apiKey: apiKey,
+      provider: _provider,
+      body: buildOpenAiImageBody(
+        request,
+        b64ResponseFormat: true,
+        sendSize: false,
+        sendAspectRatio: true,
+      ),
+    );
+    return parseOpenAiImageResponse(data, defaultMimeType: 'image/jpeg');
+  }
+
+  /// 画像生成モデル。`/v1/image-generation-models` を使い、取れなければ
+  /// モデル一覧のうち ID に `image` を含むもの。
+  @override
+  Future<List<AIModel>> getImageModels() async {
+    try {
+      final models = parseModelList(
+        await getOpenAiJson(
+          url: '$defaultBaseUrl/image-generation-models',
+          apiKey: apiKey,
+          provider: _provider,
+        ),
+      );
+      if (models.isNotEmpty) return models;
+    } on LLMException {
+      // 下の一覧で代用する。
+    }
+    return [
+      for (final m in await getModels())
+        if (m.id.contains('image')) m,
+    ];
   }
 
   @override

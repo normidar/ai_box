@@ -15,10 +15,7 @@ void main() {
         {
           'index': 0,
           'finish_reason': 'stop',
-          'message': {
-            'role': 'assistant',
-            'content': 'Hello!',
-          },
+          'message': {'role': 'assistant', 'content': 'Hello!'},
         },
       ],
       'usage': {
@@ -31,10 +28,7 @@ void main() {
           'reasoning_tokens': 0,
           'rejected_prediction_tokens': 0,
         },
-        'prompt_tokens_details': {
-          'audio_tokens': 0,
-          'cached_tokens': 2,
-        },
+        'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 2},
       },
     };
 

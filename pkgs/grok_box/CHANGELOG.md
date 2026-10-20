@@ -1,3 +1,9 @@
+## 0.0.5
+
+- `Grok` now implements `ImageGenerator` (`/v1/images/generations`, base64 JPEG,
+  `aspect_ratio`).
+- Optional `baseUrl` for tests.
+
 ## 0.0.4
 
 - `completionsStream()` now uses real SSE streaming (incremental text

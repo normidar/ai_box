@@ -1,12 +1,23 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:ai_box/ai_box.dart';
 import 'package:ai_box/provider_http.dart';
 import 'package:api_http/api_http.dart' as ac;
 import 'package:gemini_box/gemini_box.dart';
 
-class Gemini extends LLMAIBase {
-  Gemini({required super.apiKey}) : files = GeminiFiles(apiKey: apiKey);
+/// Google Gemini プロバイダー（チャット・画像生成・テキスト埋め込み）。
+class Gemini extends LLMAIBase with ImageGenerator, TextEmbedder {
+  Gemini({required super.apiKey, this.baseUrl = defaultBaseUrl})
+      : files = GeminiFiles(apiKey: apiKey);
+
+  /// Gemini API の既定のベース URL。
+  static const defaultBaseUrl =
+      'https://generativelanguage.googleapis.com/v1beta';
+
+  /// API のベース URL（テストで差し替える）。モデル一覧・ファイルは常に
+  /// Google へ問い合わせる。
+  final String baseUrl;
 
   final GeminiFiles files;
 
@@ -17,7 +28,7 @@ class Gemini extends LLMAIBase {
     final body = _buildGeminiBody(request);
     final data = await _postGemini(
       apiKey: apiKey,
-      model: request.model,
+      url: '$baseUrl/models/${request.model}:generateContent',
       body: body,
     );
     return _parseGeminiResponse(data);
@@ -28,7 +39,7 @@ class Gemini extends LLMAIBase {
   @override
   Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
     final data = postSseData(
-      url: '$_baseUrl/models/${request.model}:streamGenerateContent',
+      url: '$baseUrl/models/${request.model}:streamGenerateContent',
       provider: GeminiCore.provider,
       headers: {'x-goog-api-key': apiKey},
       body: _buildGeminiBody(request),
@@ -53,17 +64,127 @@ class Gemini extends LLMAIBase {
   @override
   Future<List<AIModel>> getModels() async {
     final models = await GeminiCore.getModels(apiKey: apiKey);
-    return models
-        .map(
-          (e) => AIModel(
-            id: e.name.split('/').last,
-            name: e.displayName,
-            description: e.description,
-            contextLength: e.inputTokenLimit,
-          ),
-        )
-        .toList();
+    return models.map(_toAIModel).toList();
   }
+
+  /// 画像生成（画像を出力できる Gemini モデルへ `generateContent` で
+  /// `responseModalities: [TEXT, IMAGE]` を送る）。[ImageGenerationRequest.n]
+  /// は無視して 1 回だけ生成する。
+  @override
+  Future<ImageGenerationResponse> generateImage(
+    ImageGenerationRequest request,
+  ) async {
+    final aspectRatio = request.aspectRatio;
+    final data = await _postGemini(
+      apiKey: apiKey,
+      url: '$baseUrl/models/${request.model}:generateContent',
+      body: {
+        'contents': [
+          {
+            'role': 'user',
+            'parts': [
+              {'text': request.prompt},
+            ],
+          },
+        ],
+        'generationConfig': {
+          'responseModalities': ['TEXT', 'IMAGE'],
+          if (aspectRatio != null) 'imageConfig': {'aspectRatio': aspectRatio},
+        },
+      },
+    );
+    final res = _parseGeminiResponse(data);
+    return ImageGenerationResponse(
+      images: res.content.images,
+      usage: res.usage,
+    );
+  }
+
+  /// 画像を出力できるモデル（`generateContent` に対応し、ID に `image` を
+  /// 含むもの。`:predict` を使う Imagen は含めない）。
+  @override
+  Future<List<AIModel>> getImageModels() async => [
+        for (final m in await GeminiCore.getModels(apiKey: apiKey))
+          if (isImageModel(m)) _toAIModel(m),
+      ];
+
+  /// [model] が [generateImage] で使える画像モデルか。
+  static bool isImageModel(ModelInfo model) {
+    final id = model.name.split('/').last;
+    return id.contains('image') &&
+        !id.startsWith('imagen') &&
+        model.supportedGenerationMethods.contains('generateContent');
+  }
+
+  /// 1 回のリクエストで送れる入力の上限（`batchEmbedContents`）。
+  @override
+  int get maxEmbeddingBatch => 100;
+
+  /// テキスト埋め込み（`batchEmbedContents`）。
+  @override
+  Future<EmbeddingResponse> embedBatch(EmbeddingRequest request) async {
+    final task = switch (request.task) {
+      EmbeddingTask.document => 'RETRIEVAL_DOCUMENT',
+      EmbeddingTask.query => 'RETRIEVAL_QUERY',
+      null => null,
+    };
+    final data = await _postGemini(
+      apiKey: apiKey,
+      url: '$baseUrl/models/${request.model}:batchEmbedContents',
+      body: {
+        'requests': [
+          for (final text in request.inputs)
+            {
+              'model': 'models/${request.model}',
+              'content': {
+                'parts': [
+                  {'text': text},
+                ],
+              },
+              if (task != null) 'taskType': task,
+              if (request.dimensions != null)
+                'outputDimensionality': request.dimensions,
+            },
+        ],
+      },
+    );
+    final embeddings = [
+      for (final e in (data['embeddings'] as List?) ?? const [])
+        if (e is Map<String, dynamic> && e['values'] is List)
+          Float32List.fromList([
+            for (final v in e['values'] as List) (v as num).toDouble(),
+          ]),
+    ];
+    if (embeddings.length != request.inputs.length) {
+      throw LLMUnknownException(
+        'Expected ${request.inputs.length} embeddings from Gemini, '
+        'got ${embeddings.length}',
+        provider: GeminiCore.provider,
+        raw: data,
+      );
+    }
+    final usage = _asMap(data['usageMetadata']);
+    return EmbeddingResponse(
+      vectors: embeddings,
+      inputTokens: (usage['promptTokenCount'] as num?)?.toInt(),
+    );
+  }
+
+  /// 埋め込みモデル（`embedContent` に対応するもの）。
+  @override
+  Future<List<AIModel>> getEmbeddingModels() async => [
+        for (final m in await GeminiCore.getModels(apiKey: apiKey))
+          if (m.supportedGenerationMethods.contains('embedContent') ||
+              m.supportedGenerationMethods.contains('batchEmbedContents'))
+            _toAIModel(m),
+      ];
+
+  static AIModel _toAIModel(ModelInfo e) => AIModel(
+        id: e.name.split('/').last,
+        name: e.displayName,
+        description: e.description,
+        contextLength: e.inputTokenLimit,
+      );
 
   @override
   Future<bool> validateKey() async {
@@ -286,17 +407,15 @@ LLMCompletionResponse _parseGeminiResponse(Map<String, dynamic> data) {
   );
 }
 
-const _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-
 Future<Map<String, dynamic>> _postGemini({
   required String apiKey,
-  required String model,
+  required String url,
   required Map<String, dynamic> body,
 }) {
   return GeminiCore.requestJson(
     () => ac.Api.post(
       requestAcc: ac.PostRequestAcc(
-        url: '$_baseUrl/models/$model:generateContent',
+        url: url,
         // API キーは URL（ログ・プロキシに残る）ではなくヘッダーで送る。
         headers: ac.RestHeaders({'x-goog-api-key': apiKey}),
         body: ac.JsonRequestBody(body),
