@@ -55,5 +55,53 @@ void main() {
       final tools = body['tools'] as List;
       expect((tools.last as Map)['cache_control'], {'type': 'ephemeral'});
     });
+
+    const oneHour = {'type': 'ephemeral', 'ttl': '1h'};
+
+    test('one-hour TTL marks every breakpoint with ttl 1h', () {
+      final body = buildClaudeBody(
+        request(),
+        promptCaching: true,
+        promptCacheTtl: ClaudeCacheTtl.oneHour,
+      );
+      final system = body['system'] as List;
+      expect((system.single as Map)['cache_control'], oneHour);
+      final messages = body['messages'] as List;
+      final last = (messages.last as Map)['content'] as List;
+      expect((last.last as Map)['cache_control'], oneHour);
+    });
+
+    test('one-hour TTL on the tool breakpoint when there is no system', () {
+      final body = buildClaudeBody(
+        request(withSystem: false),
+        promptCaching: true,
+        promptCacheTtl: ClaudeCacheTtl.oneHour,
+      );
+      final tools = body['tools'] as List;
+      expect((tools.last as Map)['cache_control'], oneHour);
+    });
+
+    test('default TTL sends no ttl', () {
+      final body = buildClaudeBody(request(), promptCaching: true);
+      expect(body.toString(), isNot(contains('ttl')));
+    });
+
+    test('TTL is ignored without promptCaching', () {
+      final body = buildClaudeBody(
+        request(),
+        promptCacheTtl: ClaudeCacheTtl.oneHour,
+      );
+      expect(body.toString(), isNot(contains('cache_control')));
+    });
+
+    test('Claude keeps the TTL it was given', () {
+      final ai = Claude(
+        apiKey: 'k',
+        promptCaching: true,
+        promptCacheTtl: ClaudeCacheTtl.oneHour,
+      );
+      expect(ai.promptCacheTtl, ClaudeCacheTtl.oneHour);
+      expect(Claude(apiKey: 'k').promptCacheTtl, ClaudeCacheTtl.fiveMinutes);
+    });
   });
 }

@@ -1,3 +1,10 @@
+## 0.1.6
+
+- `Claude(promptCacheTtl: ClaudeCacheTtl.oneHour)` keeps the prompt cache for
+  one hour (`cache_control.ttl: "1h"` on every breakpoint) instead of the
+  default five minutes. One-hour writes cost 2x the input price (1.25x for five
+  minutes), so it pays off when requests are usually 5-60 minutes apart.
+
 ## 0.1.5
 
 - `Claude(promptCaching: true)` adds `cache_control` breakpoints (after the

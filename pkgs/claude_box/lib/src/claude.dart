@@ -15,7 +15,11 @@ import 'package:claude_box/src/freezed/models/request_header/request_header.dart
 /// （`seed` / `frequencyPenalty` / `presencePenalty` / `responseFormat`）は
 /// 送信されず無視される。
 class Claude extends LLMAIBase {
-  Claude({required super.apiKey, this.promptCaching = false});
+  Claude({
+    required super.apiKey,
+    this.promptCaching = false,
+    this.promptCacheTtl = ClaudeCacheTtl.fiveMinutes,
+  });
 
   /// プロンプトキャッシュ（`cache_control`）を付けるか。
   ///
@@ -24,6 +28,13 @@ class Claude extends LLMAIBase {
   /// エージェントループで、2 回目以降の入力が割引価格で読まれる
   /// （書き込みは通常より少し高い。短すぎる prompt は API 側で無視される）。
   final bool promptCaching;
+
+  /// [promptCaching] のキャッシュを保つ時間。全部の区切りに同じ時間を付ける。
+  ///
+  /// [ClaudeCacheTtl.oneHour] は書き込みが入力の 2 倍（5 分なら 1.25 倍）なので、
+  /// 次のリクエストまでの間隔が 5〜60 分のことが多いときだけ得になる
+  /// （5 分以内に続くなら 5 分のキャッシュも読むたびに延びる）。
+  final ClaudeCacheTtl promptCacheTtl;
 
   /// Claude API は max_tokens が必須のため、未指定時に使うデフォルト値。
   static const int defaultMaxTokens = 8000;
@@ -40,7 +51,11 @@ class Claude extends LLMAIBase {
     final data = await _postClaude(
       apiKey: apiKey,
       version: _version,
-      body: buildClaudeBody(request, promptCaching: promptCaching),
+      body: buildClaudeBody(
+        request,
+        promptCaching: promptCaching,
+        promptCacheTtl: promptCacheTtl,
+      ),
     );
     return _parseClaudeResponse(data);
   }
@@ -49,7 +64,11 @@ class Claude extends LLMAIBase {
   /// 完全なパーツ・完了理由・トークン使用量が入る。
   @override
   Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
-    final body = buildClaudeBody(request, promptCaching: promptCaching);
+    final body = buildClaudeBody(
+      request,
+      promptCaching: promptCaching,
+      promptCacheTtl: promptCacheTtl,
+    );
     body['stream'] = true;
     final data = postSseData(
       url: _messagesUrl,
@@ -124,11 +143,14 @@ const _messagesUrl = 'https://api.anthropic.com/v1/messages';
 /// [promptCaching] なら `cache_control` の区切りを 2 か所に置く: system の
 /// 末尾（無ければ最後のツール定義。どちらもツール定義 → system の順の前置き
 /// 部分をまとめてキャッシュする）と、会話の最後のブロック（前のラウンドまでの
-/// 会話を次のラウンドで読めるようにする）。
+/// 会話を次のラウンドで読めるようにする）。区切りにはすべて [promptCacheTtl] を付ける
+/// （Anthropic は長い時間の区切りを短いものより前に置くことを求めるため、混ぜない）。
 Map<String, dynamic> buildClaudeBody(
   LLMCompletionRequest request, {
   bool promptCaching = false,
+  ClaudeCacheTtl promptCacheTtl = ClaudeCacheTtl.fiveMinutes,
 }) {
+  final cacheControl = promptCacheTtl.cacheControl;
   // Claude では system ロールのメッセージを system フィールドに分離する。
   final system = request.messages
       .where((e) => e.role == LLMRole.system)
@@ -145,7 +167,7 @@ Map<String, dynamic> buildClaudeBody(
     if (system.isNotEmpty)
       'system': promptCaching
           ? [
-              {'type': 'text', 'text': system, 'cache_control': _ephemeral},
+              {'type': 'text', 'text': system, 'cache_control': cacheControl},
             ]
           : system,
     if (request.temperature != null) 'temperature': request.temperature,
@@ -166,20 +188,33 @@ Map<String, dynamic> buildClaudeBody(
     if (tc != null) body['tool_choice'] = tc;
     if (promptCaching && system.isEmpty) {
       final defs = body['tools'] as List<Map<String, dynamic>>;
-      defs.last['cache_control'] = _ephemeral;
+      defs.last['cache_control'] = cacheControl;
     }
   }
   if (promptCaching) {
     final messages = body['messages'] as List<Map<String, dynamic>>;
     if (messages.isNotEmpty) {
       final blocks = messages.last['content'] as List<Map<String, dynamic>>;
-      blocks.last['cache_control'] = _ephemeral;
+      blocks.last['cache_control'] = cacheControl;
     }
   }
   return body;
 }
 
-const _ephemeral = {'type': 'ephemeral'};
+/// プロンプトキャッシュを保つ時間（`cache_control.ttl`）。
+enum ClaudeCacheTtl {
+  /// 5 分（API の既定。`ttl` を送らない）。書き込みは入力の 1.25 倍。
+  fiveMinutes,
+
+  /// 1 時間（`ttl: "1h"`）。書き込みは入力の 2 倍。
+  oneHour;
+
+  /// この時間の `cache_control`。
+  Map<String, String> get cacheControl => switch (this) {
+    fiveMinutes => const {'type': 'ephemeral'},
+    oneHour => const {'type': 'ephemeral', 'ttl': '1h'},
+  };
+}
 
 List<Map<String, dynamic>> _toClaudeMessages(List<LLMContent> messages) {
   final out = <Map<String, dynamic>>[];
