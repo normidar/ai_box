@@ -1,8 +1,10 @@
 import 'package:ai_box/ai_box.dart';
 import 'package:ai_box/openai_compat.dart';
+import 'package:ai_box/provider_http.dart';
 import 'package:openrouter_box/src/core/openrouter_core.dart';
 import 'package:openrouter_box/src/models/openrouter_key_info.dart';
 import 'package:openrouter_box/src/models/openrouter_model.dart';
+import 'package:openrouter_box/src/prompt_cache.dart';
 
 /// OpenRouter（`https://openrouter.ai`）プロバイダー。
 ///
@@ -28,7 +30,21 @@ class OpenRouter extends LLMAIBase with ImageGenerator, TextEmbedder {
     this.referer,
     this.title,
     this.baseUrl = OpenRouterCore.baseUrl,
+    this.promptCaching = false,
+    this.promptCacheTtl = OpenRouterCacheTtl.fiveMinutes,
+    this.sessionId,
   });
+
+  /// `anthropic/*` と `qwen/*` のモデルに `cache_control` を付けるか
+  /// （[applyOpenRouterPromptCache]）。
+  final bool promptCaching;
+
+  /// [promptCaching] の区切りを保つ時間（`anthropic/*` のモデルにだけ効く）。
+  final OpenRouterCacheTtl promptCacheTtl;
+
+  /// 毎回 `session_id` として送る値（同じ提供元へ送り続け、そのキャッシュを読むため。
+  /// 256 文字まで）。null なら送らない。
+  final String? sessionId;
 
   static const _provider = 'openrouter';
 
@@ -48,7 +64,7 @@ class OpenRouter extends LLMAIBase with ImageGenerator, TextEmbedder {
   Future<LLMCompletionResponse> completions(
     LLMCompletionRequest request,
   ) async {
-    final body = buildOpenAiBody(request, maxTokensKey: 'max_tokens');
+    final body = _buildBody(request);
     final data = await postOpenAiJson(
       url: _url,
       apiKey: apiKey,
@@ -64,14 +80,27 @@ class OpenRouter extends LLMAIBase with ImageGenerator, TextEmbedder {
   /// 自動付与）が入る。
   @override
   Stream<LLMStreamChunk> completionsStream(LLMCompletionRequest request) {
-    return streamOpenAiCompletions(
+    // `streamOpenAiCompletions` はボディを中で組み立てるので、キャッシュの設定を
+    // 足すためにここで組み立てる（中身は同じ）。
+    final body = _buildBody(request)..['stream'] = true;
+    final data = postSseData(
       url: _url,
-      apiKey: apiKey,
       provider: _provider,
-      request: request,
-      maxTokensKey: 'max_tokens',
-      extraHeaders: _rankingHeaders(),
+      headers: {'Authorization': 'Bearer $apiKey', ..._rankingHeaders()},
+      body: body,
     );
+    return openAiChunksFromEvents(decodeSseJson(data), provider: _provider);
+  }
+
+  Map<String, dynamic> _buildBody(LLMCompletionRequest request) {
+    final body = buildOpenAiBody(request, maxTokensKey: 'max_tokens');
+    applyOpenRouterPromptCache(
+      body,
+      promptCaching: promptCaching,
+      ttl: promptCacheTtl,
+      sessionId: sessionId,
+    );
+    return body;
   }
 
   @override

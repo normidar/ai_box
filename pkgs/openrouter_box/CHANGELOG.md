@@ -1,3 +1,16 @@
+## 0.0.6
+
+- Prompt caching options on `OpenRouter` (all off by default):
+  - `promptCaching: true` adds `cache_control` to `anthropic/*` and `qwen/*`
+    models (on the last system message and the last message with text,
+    including tool results). Other models cache automatically; Gemini gets
+    more expensive with explicit markers, so it is left alone.
+  - `promptCacheTtl: OpenRouterCacheTtl.oneHour` adds `ttl: "1h"` to the
+    `anthropic/*` markers.
+  - `sessionId` is sent as `session_id`, so OpenRouter keeps routing the
+    requests to the same provider and its cache.
+- `applyOpenRouterPromptCache()` applies the same to an OpenAI-style body.
+
 ## 0.0.5
 
 - `OpenRouter` now implements `ImageGenerator` (`/images`, `/images/models`) and
